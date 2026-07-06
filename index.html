@@ -1,0 +1,3001 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>127 Burnside Dr - Focused 3D Interior Study</title>
+  <style>
+    :root {
+      --bg: #f4f2ee;
+      --panel: #ffffff;
+      --ink: #242424;
+      --muted: #6c6c6c;
+      --line: #d9d5cc;
+      --accent: #176a68;
+      --accent-2: #ad5b2b;
+      --button: #edf4f3;
+      --button-hover: #dbecea;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 336px;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    #scene {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #scene canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .sidebar {
+      border-left: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+      overflow: auto;
+      padding: 18px;
+    }
+
+    .title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 750;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .section {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .section:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      line-height: 1.1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #4c5756;
+    }
+
+    .camera-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid #c7d8d6;
+      border-radius: 8px;
+      background: var(--button);
+      color: #143d3b;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      min-height: 40px;
+      padding: 8px 10px;
+      text-align: left;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    button:hover,
+    button:focus-visible {
+      background: var(--button-hover);
+      border-color: #8fb8b3;
+      outline: none;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 13px;
+      color: #3a3a3a;
+    }
+
+    .legend li {
+      display: grid;
+      grid-template-columns: 16px 1fr;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .swatch.wall {
+      background: #d3d1ca;
+    }
+
+    .swatch.floor {
+      background: linear-gradient(90deg, #9b9b96, #d3d1c8 45%, #73746f);
+    }
+
+    .swatch.door {
+      background: #fafafa;
+    }
+
+    .swatch.glass {
+      background: rgba(118, 179, 193, 0.55);
+    }
+
+    .measurements {
+      display: grid;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .measurement {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #ece8df;
+      padding-bottom: 7px;
+    }
+
+    .measurement strong {
+      font-weight: 720;
+    }
+
+    .measurement span:last-child {
+      color: var(--accent-2);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .assumptions {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .field {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .field input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #c7d8d6;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 13px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .field input:focus-visible {
+      outline: none;
+      border-color: #8fb8b3;
+    }
+
+    .layout-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .layout-row .load {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .layout-row .del {
+      flex: 0 0 42px;
+      min-width: 42px;
+      text-align: center;
+      color: #8a3d2b;
+    }
+
+    .thumbs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .thumb {
+      display: block;
+      aspect-ratio: 4 / 3;
+      border: 1px solid var(--line);
+      background: #f2f2f2;
+      overflow: hidden;
+      text-decoration: none;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .schema-thumb {
+      display: block;
+      margin-bottom: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .schema-thumb img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .badge {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      background: rgba(36, 36, 36, 0.72);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.4;
+      backdrop-filter: blur(10px);
+      max-width: min(420px, calc(100vw - 380px));
+    }
+
+    @media (max-width: 920px) {
+      body {
+        overflow: auto;
+      }
+
+      #app {
+        position: relative;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(62vh, 1fr) auto;
+      }
+
+      .sidebar {
+        box-shadow: none;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .badge {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <section id="scene" aria-label="Interactive 3D interior study">
+      <div class="badge">Measured in feet. Open-roof study model focused on living/dining/kitchen, bedroom, and office.</div>
+    </section>
+
+    <aside class="sidebar">
+      <h1 class="title">127 Burnside Dr</h1>
+      <p class="subtitle">Focused interior recreation from the schematic and room photos.</p>
+
+      <section class="section">
+        <h2>Views</h2>
+        <div class="camera-grid">
+          <button type="button" data-camera="overall">Overall</button>
+          <button type="button" data-camera="top">Top</button>
+          <button type="button" data-camera="open">Living / Kitchen</button>
+          <button type="button" data-camera="entry">Front Entry</button>
+          <button type="button" data-camera="bedroom">Bedroom</button>
+          <button type="button" data-camera="office">Office</button>
+        </div>
+        <p class="assumptions" style="margin-top:10px">Navigating: left-drag orbits, right-drag (or two-finger drag on a trackpad) pans, scroll or pinch zooms toward your cursor, and the arrow keys pan too (Shift = faster). If you get lost, any view button above resets you.</p>
+      </section>
+
+      <section class="section">
+        <h2>Furniture</h2>
+        <p class="assumptions">All 29 furniture pieces (plus two tall plants) wait in the staging rows in the front yard, built to their real measured sizes. Drag a piece to move it — positions snap to 2-inch steps, and a piece pulls snugly against a wall when its back gets close. Pieces starting in staging can be dropped into any clear indoor spot; once inside, they respect walls and other furniture. Chairs and other movable pieces can tuck into table and desk footprints. Click selects a piece (teal outline), then <strong>R</strong> rotates 90&deg;, <strong>E</strong> rotates 15&deg; (Shift reverses), <strong>D</strong> duplicates it, <strong>Cmd+C</strong> copies it, and <strong>Cmd+V</strong> pastes a copy at the last floor click. <strong>L</strong> locks it in place (orange outline; locked pieces can&rsquo;t be dragged until unlocked with L again). <strong>Delete</strong> or double-click removes a copy, while originals return to staging. Everything saves automatically in this browser.</p>
+        <div class="camera-grid" style="margin-top:10px">
+          <button type="button" id="undo-furniture" disabled>Undo (Cmd+Z)</button>
+          <button type="button" id="duplicate-piece">Duplicate selected (D)</button>
+          <button type="button" id="add-new-inventory">Add new inventory</button>
+          <button type="button" id="reset-furniture">Reset furniture</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Saved Layouts</h2>
+        <div class="field">
+          <input id="layout-name" type="text" placeholder="Name it — e.g. DC V1 or Bea V1" maxlength="40">
+          <button type="button" id="save-layout">Save</button>
+        </div>
+        <div id="layout-list"></div>
+        <button type="button" id="share-link" style="margin-top:10px; width:100%">Copy share link (current layout)</button>
+      </section>
+
+      <section class="section">
+        <h2>Measurements</h2>
+        <button type="button" id="toggle-measurements" aria-pressed="true" style="margin-bottom:10px; width:100%">Hide distance markers</button>
+        <div class="measurements">
+          <div class="measurement"><strong>Living room</strong><span>17.4 x 13.3 ft</span></div>
+          <div class="measurement"><strong>Open area depth</strong><span>23.8 ft</span></div>
+          <div class="measurement"><strong>West wall to island top</strong><span>10.7 ft</span></div>
+          <div class="measurement"><strong>Pantry depth</strong><span>5.9 ft</span></div>
+          <div class="measurement"><strong>Bedroom</strong><span>19.2 x 9.2 ft</span></div>
+          <div class="measurement"><strong>Office</strong><span>11.8 x 12.2 ft</span></div>
+          <div class="measurement"><strong>Office depth at door wall</strong><span>11.1 ft</span></div>
+          <div class="measurement"><strong>Garage</strong><span>14.0 x 21.7 ft</span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Material Cues</h2>
+        <ul class="legend">
+          <li><span class="swatch floor"></span><span>Gray wood-look plank flooring</span></li>
+          <li><span class="swatch wall"></span><span>Light gray walls with white trim</span></li>
+          <li><span class="swatch door"></span><span>White doors, closet panels, baseboards</span></li>
+          <li><span class="swatch glass"></span><span>Rear sliders and exterior windows</span></li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>Interpretation Notes</h2>
+        <p class="assumptions">Front yard is at the lower/front edge, backyard sliders at the rear. Between living room and bedroom sits the pantry block: pantry (opens to the hallway), entry closet beside the front door, and the bedroom closet reached from inside the bedroom. The 3.4 ft hallway runs along the bathroom core to a small vestibule where the bedroom and office doors face each other. Office depth is 12.2 ft at the accordion-closet side and 11.1 ft at the door wall. Bath core and garage are modeled as translucent context.</p>
+      </section>
+
+      <section class="section">
+        <h2>Schematic</h2>
+        <a class="schema-thumb" href="assets/schematic.png" target="_blank" rel="noreferrer">
+          <img src="assets/schematic.png" alt="House measurements and schematic">
+        </a>
+      </section>
+
+      <section class="section">
+        <h2>Photo References</h2>
+        <div class="thumbs">
+          <a class="thumb" href="assets/photo_1.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_1.jpg" alt="Interior reference photo 1"></a>
+          <a class="thumb" href="assets/photo_2.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_2.jpg" alt="Interior reference photo 2"></a>
+          <a class="thumb" href="assets/photo_3.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_3.jpg" alt="Interior reference photo 3"></a>
+          <a class="thumb" href="assets/photo_4.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_4.jpg" alt="Interior reference photo 4"></a>
+          <a class="thumb" href="assets/photo_5.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_5.jpg" alt="Interior reference photo 5"></a>
+          <a class="thumb" href="assets/photo_6.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_6.jpg" alt="Interior reference photo 6"></a>
+          <a class="thumb" href="assets/photo_7.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_7.jpg" alt="Interior reference photo 7"></a>
+          <a class="thumb" href="assets/photo_8.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_8.jpg" alt="Interior reference photo 8"></a>
+          <a class="thumb" href="assets/photo_9.jpg" target="_blank" rel="noreferrer"><img src="assets/photo_9.jpg" alt="Interior reference photo 9"></a>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const container = document.querySelector("#scene");
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0xe9e5dc, 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe9e5dc);
+    scene.fog = new THREE.Fog(0xe9e5dc, 82, 135);
+
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 220);
+    camera.position.set(28, 34, 48);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(22, 0.8, 12);
+    controls.maxPolarAngle = Math.PI * 0.48;
+    controls.minDistance = 5;
+    controls.maxDistance = 95;
+    controls.zoomToCursor = true;
+
+    const model = new THREE.Group();
+    model.name = "127 Burnside Dr focused study model";
+    // Plan coordinates follow the schematic: x = 0 at the living/dining west wall
+    // (garage at negative x), z = 0 at the front wall, z = 23.8 at the rear wall.
+    // The mirror flip (scale.x = -1) converts the paper plan into real-world
+    // chirality so photos match (garage on your right when facing the front yard).
+    const PLAN_EAST = 43.7; // bedroom/office east wall, ft from living west wall
+    model.position.x = PLAN_EAST;
+    model.scale.x = -1;
+    scene.add(model);
+
+    const ft = 1;
+    const wallH = 8.1 * ft;
+    const wallT = 0.26 * ft;
+    const trimH = 0.28 * ft;
+    const doorH = 6.85 * ft;
+    const doorT = 0.08 * ft;
+    const labelY = 0.12;
+    const houseColliders = [];
+
+    const palette = {
+      wall: 0xd3d1ca,
+      wallSide: 0xc6c4bc,
+      trim: 0xf8f8f4,
+      ceiling: 0xf3f0e8,
+      door: 0xf7f6f1,
+      glass: 0x8fc5d0,
+      glassDark: 0x497b87,
+      cabinet: 0x51433d,
+      cabinetLight: 0x82756d,
+      counter: 0xd9d4c9,
+      appliance: 0x1d1d1d,
+      metal: 0xb9bdc0,
+      context: 0xd9d4c8,
+      orange: 0xe17c24,
+      magenta: 0xd33d86,
+      teal: 0x176a68
+    };
+
+    const matWall = new THREE.MeshStandardMaterial({ color: palette.wall, roughness: 0.86 });
+    const matWallContext = new THREE.MeshStandardMaterial({
+      color: palette.context,
+      roughness: 0.86,
+      transparent: true,
+      opacity: 0.34
+    });
+    const matTrim = new THREE.MeshStandardMaterial({ color: palette.trim, roughness: 0.78 });
+    const matDoor = new THREE.MeshStandardMaterial({ color: palette.door, roughness: 0.72 });
+    const matGlass = new THREE.MeshPhysicalMaterial({
+      color: palette.glass,
+      transparent: true,
+      opacity: 0.34,
+      metalness: 0,
+      roughness: 0.08,
+      transmission: 0.16
+    });
+    const matFrame = new THREE.MeshStandardMaterial({ color: 0xf8f8f3, roughness: 0.55 });
+    const matCabinet = new THREE.MeshStandardMaterial({ color: palette.cabinet, roughness: 0.52 });
+    const matCabinetLight = new THREE.MeshStandardMaterial({ color: palette.cabinetLight, roughness: 0.56 });
+    const matAppliance = new THREE.MeshStandardMaterial({ color: palette.appliance, roughness: 0.32 });
+    const matMetal = new THREE.MeshStandardMaterial({ color: palette.metal, metalness: 0.58, roughness: 0.28 });
+    const matCounter = new THREE.MeshStandardMaterial({
+      color: palette.counter,
+      roughness: 0.38,
+      map: makeGraniteTexture()
+    });
+    const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.62 });
+    const matFloor = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.68,
+      map: makeWoodTexture()
+    });
+    matFloor.map.repeat.set(18, 24);
+
+    const dimensionMatOrange = new THREE.LineBasicMaterial({ color: palette.orange, depthTest: false });
+    const dimensionMatMagenta = new THREE.LineBasicMaterial({ color: palette.magenta, depthTest: false });
+    const measurementsGroup = new THREE.Group();
+    measurementsGroup.name = "distance measurement overlays";
+    model.add(measurementsGroup);
+
+    function seededRandom(seed) {
+      let t = seed + 0x6d2b79f5;
+      return function next() {
+        t += 0x6d2b79f5;
+        let r = Math.imul(t ^ (t >>> 15), 1 | t);
+        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function makeWoodTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext("2d");
+      const rand = seededRandom(127);
+      ctx.fillStyle = "#a9aaa3";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const plankH = 86;
+      for (let y = 0; y < canvas.height + plankH; y += plankH) {
+        let x = -Math.floor(rand() * 220);
+        while (x < canvas.width) {
+          const w = 190 + Math.floor(rand() * 230);
+          const hue = 34 + Math.floor(rand() * 10);
+          const sat = 8 + Math.floor(rand() * 9);
+          const light = 49 + Math.floor(rand() * 15);
+          const grad = ctx.createLinearGradient(x, y, x + w, y + plankH);
+          grad.addColorStop(0, `hsl(${hue}, ${sat}%, ${light + 6}%)`);
+          grad.addColorStop(0.45, `hsl(${hue}, ${sat}%, ${light}%)`);
+          grad.addColorStop(1, `hsl(${hue}, ${sat}%, ${light + 10}%)`);
+          ctx.fillStyle = grad;
+          ctx.fillRect(x, y, w, plankH);
+          ctx.strokeStyle = "rgba(35,35,35,0.22)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, w, plankH);
+
+          ctx.globalAlpha = 0.18;
+          for (let g = 0; g < 7; g += 1) {
+            const gy = y + 10 + rand() * (plankH - 20);
+            const gx = x + rand() * w;
+            ctx.beginPath();
+            ctx.moveTo(gx, gy);
+            ctx.bezierCurveTo(gx + w * 0.18, gy - 14 + rand() * 28, gx + w * 0.52, gy - 12 + rand() * 24, gx + w * 0.94, gy + rand() * 18 - 9);
+            ctx.strokeStyle = rand() > 0.5 ? "#323435" : "#e8e3da";
+            ctx.lineWidth = 2 + rand() * 2;
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+
+          x += w;
+        }
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = 8;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    function makeGraniteTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext("2d");
+      const rand = seededRandom(5127);
+      ctx.fillStyle = "#d6d1c5";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 6500; i += 1) {
+        const v = 120 + Math.floor(rand() * 105);
+        ctx.fillStyle = `rgba(${v},${v},${v},${0.10 + rand() * 0.22})`;
+        const r = 0.6 + rand() * 2.2;
+        ctx.beginPath();
+        ctx.arc(rand() * canvas.width, rand() * canvas.height, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(2.4, 1.5);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    function registerHouseCollider({ x, y = 0, z, w, h, d, name }) {
+      if (y + h <= 0.05) return;
+      houseColliders.push({
+        x1: x,
+        x2: x + w,
+        y1: y,
+        y2: y + h,
+        z1: z,
+        z2: z + d,
+        name: name || "solid house element"
+      });
+    }
+
+    function box({ x, y = 0, z, w, h, d, material, name, cast = true, receive = true, collision = true }) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+      mesh.position.set(x + w / 2, y + h / 2, z + d / 2);
+      mesh.name = name || "box";
+      mesh.castShadow = cast;
+      mesh.receiveShadow = receive;
+      model.add(mesh);
+      if (collision) registerHouseCollider({ x, y, z, w, h, d, name: mesh.name });
+      return mesh;
+    }
+
+    function wallX(x1, x2, z, opts = {}) {
+      if (x2 <= x1) return null;
+      const h = opts.h ?? wallH;
+      const material = opts.context ? matWallContext : matWall;
+      const mesh = box({
+        x: x1,
+        z: z - wallT / 2,
+        w: x2 - x1,
+        h,
+        d: wallT,
+        material,
+        name: opts.name || "wall horizontal"
+      });
+      if (!opts.noTrim && !opts.context) {
+        trimX(x1, x2, z - wallT * 0.62);
+        trimX(x1, x2, z + wallT * 0.62);
+      }
+      return mesh;
+    }
+
+    function wallZ(x, z1, z2, opts = {}) {
+      if (z2 <= z1) return null;
+      const h = opts.h ?? wallH;
+      const material = opts.context ? matWallContext : matWall;
+      const mesh = box({
+        x: x - wallT / 2,
+        z: z1,
+        w: wallT,
+        h,
+        d: z2 - z1,
+        material,
+        name: opts.name || "wall vertical"
+      });
+      if (!opts.noTrim && !opts.context) {
+        trimZ(x - wallT * 0.62, z1, z2);
+        trimZ(x + wallT * 0.62, z1, z2);
+      }
+      return mesh;
+    }
+
+    function trimX(x1, x2, z) {
+      return box({
+        x: x1,
+        z: z - 0.035,
+        w: x2 - x1,
+        h: trimH,
+        d: 0.07,
+        material: matTrim,
+        name: "baseboard",
+        cast: false,
+        collision: false
+      });
+    }
+
+    function trimZ(x, z1, z2) {
+      return box({
+        x: x - 0.035,
+        z: z1,
+        w: 0.07,
+        h: trimH,
+        d: z2 - z1,
+        material: matTrim,
+        name: "baseboard",
+        cast: false,
+        collision: false
+      });
+    }
+
+    function floorRect(x, z, w, d, name) {
+      const mesh = box({
+        x,
+        z,
+        w,
+        d,
+        h: 0.08,
+        y: -0.08,
+        material: matFloor,
+        name,
+        cast: false,
+        collision: false
+      });
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function outlineRect(x, z, w, d, color = 0xffffff, y = 0.025) {
+      const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.42 });
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x, y, z),
+        new THREE.Vector3(x + w, y, z),
+        new THREE.Vector3(x + w, y, z + d),
+        new THREE.Vector3(x, y, z + d),
+        new THREE.Vector3(x, y, z)
+      ]);
+      const line = new THREE.Line(geometry, material);
+      model.add(line);
+      return line;
+    }
+
+    function doorPanel({ x, z, width = 3, orientation = "x", label = "door", glass = false, openAngle = 0 }) {
+      const panelDepth = doorT;
+      const material = glass ? matGlass : matDoor;
+      const group = new THREE.Group();
+      group.name = label;
+
+      let slab;
+      if (orientation === "x") {
+        slab = new THREE.Mesh(new THREE.BoxGeometry(width, doorH, panelDepth), material);
+        slab.position.set(0, doorH / 2, 0);
+      } else {
+        slab = new THREE.Mesh(new THREE.BoxGeometry(panelDepth, doorH, width), material);
+        slab.position.set(0, doorH / 2, 0);
+      }
+      slab.castShadow = true;
+      group.add(slab);
+
+      const panelW = orientation === "x" ? width * 0.32 : panelDepth + 0.02;
+      const panelD = orientation === "x" ? 0.035 : width * 0.32;
+      const inset1 = new THREE.Mesh(new THREE.BoxGeometry(panelW, 1.1, panelD), matTrim);
+      const inset2 = inset1.clone();
+      const inset3 = inset1.clone();
+      const inset4 = inset1.clone();
+      const insetMeshes = [inset1, inset2, inset3, inset4];
+      insetMeshes.forEach((mesh, i) => {
+        mesh.castShadow = false;
+        mesh.position.y = 1.65 + Math.floor(i / 2) * 2.05;
+        if (orientation === "x") {
+          mesh.position.x = (i % 2 === 0 ? -1 : 1) * width * 0.21;
+          mesh.position.z = -panelDepth * 0.6;
+        } else {
+          mesh.position.z = (i % 2 === 0 ? -1 : 1) * width * 0.21;
+          mesh.position.x = -panelDepth * 0.6;
+        }
+        group.add(mesh);
+      });
+
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.09, 18, 10), matMetal);
+      knob.castShadow = true;
+      knob.position.y = 3.0;
+      if (orientation === "x") {
+        knob.position.set(width * 0.33, knob.position.y, -0.08);
+      } else {
+        knob.position.set(-0.08, knob.position.y, width * 0.33);
+      }
+      group.add(knob);
+
+      group.position.set(x, 0, z);
+      group.rotation.y = openAngle;
+      model.add(group);
+      if (orientation === "x") {
+        registerHouseCollider({ x: x - width / 2, z: z - panelDepth / 2, w: width, h: doorH, d: panelDepth, name: label });
+      } else {
+        registerHouseCollider({ x: x - panelDepth / 2, z: z - width / 2, w: panelDepth, h: doorH, d: width, name: label });
+      }
+      return group;
+    }
+
+    function addFrameX(x1, x2, z, h = doorH, sill = 0) {
+      const w = x2 - x1;
+      box({ x: x1 - 0.12, z: z - 0.12, w: 0.18, h, d: 0.24, y: sill, material: matFrame, name: "frame" });
+      box({ x: x2 - 0.06, z: z - 0.12, w: 0.18, h, d: 0.24, y: sill, material: matFrame, name: "frame" });
+      box({ x: x1 - 0.12, z: z - 0.12, w: w + 0.24, h: 0.18, d: 0.24, y: sill + h, material: matFrame, name: "header" });
+    }
+
+    function addFrameZ(x, z1, z2, h = doorH, sill = 0) {
+      const d = z2 - z1;
+      box({ x: x - 0.12, z: z1 - 0.12, w: 0.24, h, d: 0.18, y: sill, material: matFrame, name: "frame" });
+      box({ x: x - 0.12, z: z2 - 0.06, w: 0.24, h, d: 0.18, y: sill, material: matFrame, name: "frame" });
+      box({ x: x - 0.12, z: z1 - 0.12, w: 0.24, h: 0.18, d: d + 0.24, y: sill + h, material: matFrame, name: "header" });
+    }
+
+    function slidingDoorX(x1, x2, z, name) {
+      const w = x2 - x1;
+      addFrameX(x1, x2, z, 6.85, 0);
+      box({ x: x1 + 0.15, z: z - 0.035, w: w / 2 - 0.16, h: 6.5, d: 0.07, y: 0.12, material: matGlass, name: `${name} glass left` });
+      box({ x: x1 + w / 2 + 0.02, z: z + 0.035, w: w / 2 - 0.16, h: 6.5, d: 0.07, y: 0.12, material: matGlass, name: `${name} glass right` });
+      box({ x: x1 + w / 2 - 0.04, z: z - 0.1, w: 0.08, h: 6.55, d: 0.2, y: 0.12, material: matFrame, name: `${name} center mullion` });
+      box({ x: x1 + 0.2, z: z - 0.16, w: w - 0.4, h: 0.08, d: 0.22, y: 0.08, material: matFrame, name: `${name} track` });
+    }
+
+    function slidingDoorZ(x, z1, z2, name) {
+      const d = z2 - z1;
+      addFrameZ(x, z1, z2, 6.85, 0);
+      box({ x: x - 0.035, z: z1 + 0.15, w: 0.07, h: 6.5, d: d / 2 - 0.16, y: 0.12, material: matGlass, name: `${name} glass left` });
+      box({ x: x + 0.035, z: z1 + d / 2 + 0.02, w: 0.07, h: 6.5, d: d / 2 - 0.16, y: 0.12, material: matGlass, name: `${name} glass right` });
+      box({ x: x - 0.1, z: z1 + d / 2 - 0.04, w: 0.2, h: 6.55, d: 0.08, y: 0.12, material: matFrame, name: `${name} center mullion` });
+      box({ x: x - 0.16, z: z1 + 0.2, w: 0.22, h: 0.08, d: d - 0.4, y: 0.08, material: matFrame, name: `${name} track` });
+    }
+
+    function windowX(x1, x2, z, sill = 2.7, h = 3.2, name = "window") {
+      const w = x2 - x1;
+      wallX(x1, x2, z, { h: sill, name: `${name} wall below sill` });
+      box({ x: x1, z: z - wallT / 2, w, h: wallH - sill - h, d: wallT, y: sill + h, material: matWall, name: `${name} wall above header` });
+      addFrameX(x1, x2, z, h, sill);
+      box({ x: x1 + 0.12, z: z - 0.035, w: w - 0.24, h: h - 0.16, d: 0.07, y: sill + 0.08, material: matGlass, name });
+      box({ x: x1 + w / 2 - 0.04, z: z - 0.08, w: 0.08, h: h - 0.05, d: 0.14, y: sill + 0.02, material: matFrame, name: `${name} mullion` });
+      box({ x: x1 + 0.12, z: z - 0.08, w: w - 0.24, h: 0.07, d: 0.14, y: sill + h / 2, material: matFrame, name: `${name} rail` });
+    }
+
+    function windowZ(x, z1, z2, sill = 2.7, h = 3.2, name = "window") {
+      const d = z2 - z1;
+      wallZ(x, z1, z2, { h: sill, name: `${name} wall below sill` });
+      box({ x: x - wallT / 2, z: z1, w: wallT, h: wallH - sill - h, d, y: sill + h, material: matWall, name: `${name} wall above header` });
+      addFrameZ(x, z1, z2, h, sill);
+      box({ x: x - 0.035, z: z1 + 0.12, w: 0.07, h: h - 0.16, d: d - 0.24, y: sill + 0.08, material: matGlass, name });
+      box({ x: x - 0.08, z: z1 + d / 2 - 0.04, w: 0.14, h: h - 0.05, d: 0.08, y: sill + 0.02, material: matFrame, name: `${name} mullion` });
+      box({ x: x - 0.08, z: z1 + 0.12, w: 0.14, h: 0.07, d: d - 0.24, y: sill + h / 2, material: matFrame, name: `${name} rail` });
+    }
+
+    function frontDoor(x, z) {
+      addFrameX(x - 1.45, x + 1.45, z, 7.1, 0);
+      const door = doorPanel({ x, z, width: 2.85, orientation: "x", label: "front door" });
+      const glass = box({
+        x: x - 0.55,
+        z: z - 0.075,
+        w: 1.1,
+        h: 2.5,
+        d: 0.05,
+        y: 3.6,
+        material: matGlass,
+        name: "front door decorative glass"
+      });
+      glass.castShadow = false;
+      box({ x: x - 0.48, z: z - 0.11, w: 0.96, h: 0.05, d: 0.05, y: 4.84, material: matFrame, name: "front glass rail" });
+      box({ x: x - 0.48, z: z - 0.11, w: 0.96, h: 0.05, d: 0.05, y: 4.36, material: matFrame, name: "front glass rail" });
+      box({ x: x - 0.02, z: z - 0.11, w: 0.04, h: 2.3, d: 0.05, y: 3.7, material: matFrame, name: "front glass mullion" });
+      return door;
+    }
+
+    function addBifoldDoorsOnZWall(x, z1, z2, side = -1) {
+      const d = z2 - z1;
+      const panelCount = 4;
+      const panelD = d / panelCount - 0.04;
+      for (let i = 0; i < panelCount; i += 1) {
+        const mesh = box({
+          x: x + side * 0.03 - (side < 0 ? 0.05 : 0),
+          z: z1 + i * d / panelCount + 0.02,
+          w: 0.08,
+          h: 6.85,
+          d: panelD,
+          y: 0,
+          material: matDoor,
+          name: "office bifold closet door"
+        });
+        mesh.rotation.y = (i % 2 === 0 ? 0.04 : -0.04);
+        box({
+          x: x + side * 0.09 - (side < 0 ? 0.06 : 0),
+          z: z1 + i * d / panelCount + panelD * 0.48,
+          w: 0.05,
+          h: 0.05,
+          d: 0.05,
+          y: 3.0,
+          material: matMetal,
+          name: "bifold knob"
+        });
+      }
+      addFrameZ(x, z1, z2, 6.9, 0);
+    }
+
+    function addBifoldDoorsOnXWall(x1, x2, z, side = 1) {
+      const w = x2 - x1;
+      const panelCount = 4;
+      const panelW = w / panelCount - 0.04;
+      for (let i = 0; i < panelCount; i += 1) {
+        const mesh = box({
+          x: x1 + i * w / panelCount + 0.02,
+          z: z + side * 0.03 - (side < 0 ? 0.05 : 0),
+          w: panelW,
+          h: 6.85,
+          d: 0.08,
+          y: 0,
+          material: matDoor,
+          name: "office bifold closet door"
+        });
+        mesh.rotation.y = (i % 2 === 0 ? 0.04 : -0.04);
+        box({
+          x: x1 + i * w / panelCount + panelW * 0.48,
+          z: z + side * 0.09 - (side < 0 ? 0.06 : 0),
+          w: 0.05,
+          h: 0.05,
+          d: 0.05,
+          y: 3.0,
+          material: matMetal,
+          name: "bifold knob"
+        });
+      }
+      addFrameX(x1, x2, z, 6.9, 0);
+    }
+
+    function addMiniSplit({ x, z, orientation = "x", name = "mini split" }) {
+      const group = new THREE.Group();
+      group.name = name;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.6, 0.35), matWhite);
+      body.castShadow = true;
+      body.position.y = 6.95;
+      group.add(body);
+      const vent = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.08), matAppliance);
+      vent.position.set(0, 6.72, -0.19);
+      group.add(vent);
+      group.position.set(x, 0, z);
+      if (orientation === "z") group.rotation.y = Math.PI / 2;
+      model.add(group);
+      if (orientation === "z") {
+        registerHouseCollider({ x: x - 0.18, z: z - 1.3, w: 0.36, h: 0.7, d: 2.6, y: 6.65, name });
+      } else {
+        registerHouseCollider({ x: x - 1.3, z: z - 0.18, w: 2.6, h: 0.7, d: 0.36, y: 6.65, name });
+      }
+      return group;
+    }
+
+    function addCabinetRunRear() {
+      // Rear (backyard) counter run with the sink under the kitchen window.
+      box({ x: 10.4, z: 22.35, w: 7.1, h: 2.8, d: 1.45, material: matCabinetLight, name: "rear base cabinets" });
+      box({ x: 10.25, z: 22.15, w: 7.4, h: 0.18, d: 1.62, y: 2.8, material: matCounter, name: "rear countertop" });
+      box({ x: 10.55, z: 23.1, w: 2.05, h: 2.1, d: 0.42, y: 4.65, material: matCabinet, name: "upper cabinet" });
+      box({ x: 16.35, z: 23.1, w: 1.15, h: 2.1, d: 0.42, y: 4.65, material: matCabinet, name: "upper cabinet" });
+      box({ x: 13.85, z: 22.5, w: 1.5, h: 0.08, d: 0.86, y: 2.91, material: matMetal, name: "sink basin" });
+      const faucet = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 8, 20, Math.PI), matMetal);
+      faucet.position.set(14.6, 3.18, 23.05);
+      faucet.rotation.x = Math.PI / 2;
+      faucet.castShadow = true;
+      model.add(faucet);
+    }
+
+    function addCabinetRunEast() {
+      // East run along the bath-core wall: counters, range, and fridge at the rear end.
+      box({ x: 18.85, z: 13.0, w: 1.45, h: 2.8, d: 8.2, material: matCabinetLight, name: "east base cabinets" });
+      box({ x: 18.66, z: 12.85, w: 1.74, h: 0.18, d: 8.5, y: 2.8, material: matCounter, name: "east countertop" });
+      box({ x: 18.95, z: 19.05, w: 1.28, h: 0.25, d: 2.1, y: 2.98, material: matAppliance, name: "range top" });
+      box({ x: 18.96, z: 19.1, w: 1.32, h: 2.2, d: 2.0, y: 0.05, material: matAppliance, name: "stove front" });
+      box({ x: 19.92, z: 19.1, w: 0.38, h: 0.35, d: 2.0, y: 5.0, material: matAppliance, name: "range hood" });
+      box({ x: 19.97, z: 14.9, w: 0.35, h: 2.1, d: 2.0, y: 4.65, material: matCabinet, name: "upper cabinet" });
+      box({ x: 19.97, z: 17.0, w: 0.35, h: 2.1, d: 1.8, y: 4.65, material: matCabinet, name: "upper cabinet" });
+      box({ x: 18.6, z: 21.45, w: 1.68, h: 5.9, d: 2.25, material: matAppliance, name: "refrigerator" });
+    }
+
+    function addIsland() {
+      // The schematic's 10.7 ft runs from the west wall to the island COUNTERTOP edge;
+      // the base cabinet sits behind the seating overhang, so it starts further east.
+      box({ x: 11.15, z: 13.48, w: 3.9, h: 2.75, d: 7.1, material: matCabinetLight, name: "kitchen island base" });
+      box({ x: 10.7, z: 13.3, w: 4.5, h: 0.22, d: 7.46, y: 2.75, material: matCounter, name: "kitchen island countertop with seating lip" });
+      box({ x: 10.83, z: 13.48, w: 0.16, h: 0.08, d: 7.1, y: 2.53, material: matAppliance, name: "island overhang shadow" });
+      for (let i = 0; i < 3; i += 1) {
+        box({ x: 11.08, z: 14.03 + i * 2.05, w: 0.06, h: 1.1, d: 0.95, y: 0.95, material: matCabinet, name: "island side panel" });
+      }
+      addLabel("Island", 13.1, 3.3, 17.0, 0x143d3b, 1.2);
+    }
+
+    function addLightDisc() {
+      return null;
+    }
+
+    function addRoomLabel(text, x, z, color = 0x2a2a2a) {
+      addLabel(text, x, 0.22, z, color, 2.2);
+    }
+
+    function addOrientationLabels() {
+      addLabel("Front Yard", 8.5, 0.18, -1.75, 0x5b9f35, 1.05);
+      addLabel("Front Yard", 34.0, 0.18, -1.75, 0x5b9f35, 1.05);
+      addLabel("Backyard", -7.0, 0.18, 25.5, 0x5b9f35, 1.05);
+      addLabel("Backyard", 10.3, 0.18, 25.5, 0x5b9f35, 1.05);
+      addLabel("Backyard", 37.8, 0.18, 25.5, 0x5b9f35, 1.05);
+    }
+
+    function addLabel(text, x, y, z, color = 0x242424, scale = 1.0, parent = model) {
+      const sprite = makeTextSprite(text, color);
+      sprite.position.set(x, y, z);
+      sprite.scale.set(sprite.userData.w * scale, sprite.userData.h * scale, 1);
+      sprite.renderOrder = 20;
+      parent.add(sprite);
+      return sprite;
+    }
+
+    function makeTextSprite(text, color) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const fontSize = 84;
+      ctx.font = `700 ${fontSize}px Inter, Arial, sans-serif`;
+      const metrics = ctx.measureText(text);
+      const padX = 42;
+      const padY = 30;
+      canvas.width = Math.ceil(metrics.width + padX * 2);
+      canvas.height = fontSize + padY * 2;
+      ctx.font = `700 ${fontSize}px Inter, Arial, sans-serif`;
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
+      ctx.fillText(text, padX, canvas.height / 2);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthTest: false
+      });
+      const sprite = new THREE.Sprite(material);
+      sprite.userData.w = canvas.width / 260;
+      sprite.userData.h = canvas.height / 260;
+      return sprite;
+    }
+
+    function dimensionLine({ x1, z1, x2, z2, text, color = "orange", y = labelY }) {
+      const material = color === "magenta" ? dimensionMatMagenta : dimensionMatOrange;
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x1, y, z1),
+        new THREE.Vector3(x2, y, z2)
+      ]);
+      const line = new THREE.Line(geometry, material);
+      line.renderOrder = 30;
+      measurementsGroup.add(line);
+
+      const endpointMaterial = new THREE.MeshBasicMaterial({
+        color: color === "magenta" ? palette.magenta : palette.orange,
+        depthTest: false
+      });
+      for (const [x, z] of [[x1, z1], [x2, z2]]) {
+        const marker = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 8), endpointMaterial);
+        marker.position.set(x, y, z);
+        marker.renderOrder = 31;
+        measurementsGroup.add(marker);
+      }
+
+      const labelColor = color === "magenta" ? palette.magenta : palette.orange;
+      addLabel(text, (x1 + x2) / 2, y + 0.1, (z1 + z2) / 2, labelColor, 0.72, measurementsGroup);
+    }
+
+    function addFocusBand(x, z, w, d, color) {
+      const material = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.09,
+        depthWrite: false
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), material);
+      mesh.position.set(x + w / 2, 0.012, z + d / 2);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.name = "focus floor tint";
+      model.add(mesh);
+    }
+
+    // ---- Plan constants (ft), straight from the schematic ----
+    const P = {
+      rearZ: 23.8,        // front wall z=0 to rear wall
+      livingE: 17.4,      // living room width, west wall to pantry block
+      kitchenE: 20.3,     // kitchen east wall = bath core west wall
+      blockE: 24.5,       // pantry block east face = bedroom west wall
+      eastE: 43.7,        // east exterior wall (24.5 + 19.2)
+      hallS: 9.2,         // hallway south wall = bedroom north wall
+      hallN: 12.6,        // hallway north wall = bath core / office south wall
+      pantryS: 3.3,       // pantry south wall (pantry depth 5.9)
+      closetDoorX: 22.9,  // bedroom closet door plane (nook west face)
+      bedClosetW: 20.4,   // bedroom closet west wall
+      officeW: 31.9,      // office west wall (43.7 - 11.8)
+      offClosetW: 36.3,   // office closet west wall / vestibule east wall
+      offClosetZ: 11.6,   // accordion door line (23.8 - 12.2)
+      offClosetBack: 10.0,
+      garW: -14.4,        // garage west wall (14.0 wide)
+      garS: 2.1           // garage front wall (21.7 deep)
+    };
+
+    function buildOpenArea() {
+      floorRect(0, 0, P.livingE, P.rearZ, "open area floor");
+      floorRect(P.livingE, P.hallN, P.kitchenE - P.livingE, P.rearZ - P.hallN, "kitchen east strip floor");
+      addFocusBand(0, 0, P.livingE, 13.3, 0x176a68);
+      addFocusBand(0, 13.3, 10.7, 10.5, 0xe17c24);
+      addFocusBand(10.7, 12.6, 9.6, 11.2, 0xe17c24);
+      outlineRect(0, 0, P.livingE, 13.3, 0x176a68);
+      outlineRect(0, 13.3, 10.7, 10.5, 0xe17c24);
+      outlineRect(10.7, 12.6, 9.6, 11.2, 0xe17c24);
+
+      // West wall shared with the garage; photo confirms the garage door sits at the
+      // backyard end of this wall, about a foot from the rear corner.
+      wallZ(0, 0, 20.25, { name: "shared garage wall" });
+      doorPanel({ x: 0.08, z: 21.55, width: 2.4, orientation: "z", label: "garage door" });
+      addFrameZ(0, 20.35, 22.75);
+      wallZ(0, 22.8, P.rearZ, { name: "shared garage wall" });
+
+      // Front wall: one large 3-part window, then the front door at the east end.
+      wallX(0, 3.5, 0, { name: "front wall" });
+      windowX(3.5, 10.5, 0, 2.55, 3.35, "front living window");
+      box({ x: 5.6, z: -0.08, w: 0.09, h: 3.3, d: 0.14, y: 2.57, material: matFrame, name: "front window mullion" });
+      box({ x: 8.3, z: -0.08, w: 0.09, h: 3.3, d: 0.14, y: 2.57, material: matFrame, name: "front window mullion" });
+      wallX(10.5, 14.0, 0, { name: "front wall" });
+      frontDoor(15.5, 0);
+      wallX(17.0, P.blockE, 0, { name: "front wall behind entry closets" });
+
+      // Rear wall: dining slider starts 3.4 ft from the west corner; sink window right of it.
+      wallX(0, 3.4, P.rearZ, { name: "rear dining wall" });
+      slidingDoorX(3.4, 8.8, P.rearZ, "dining slider");
+      wallX(8.8, 12.8, P.rearZ, { name: "rear kitchen wall" });
+      windowX(12.8, 16.2, P.rearZ, 3.0, 2.6, "kitchen sink window");
+      wallX(16.2, P.kitchenE, P.rearZ, { name: "rear kitchen wall" });
+
+      // Kitchen east wall (bath core beyond).
+      wallZ(P.kitchenE, P.hallN, P.rearZ, { name: "kitchen east wall" });
+
+      addCabinetRunRear();
+      addCabinetRunEast();
+      addIsland();
+
+      addMiniSplit({ x: 0.24, z: 4.5, orientation: "z", name: "living room mini split" });
+
+      addRoomLabel("Living Room", 7.5, 5.5);
+      addRoomLabel("Dining Room", 4.6, 18.6);
+      addRoomLabel("Kitchen", 16.6, 17.6);
+      addRoomLabel("Front Entry", 15.6, 1.9, 0x555555);
+
+      dimensionLine({ x1: 0, z1: 6.5, x2: P.livingE, z2: 6.5, text: "17.4 ft" });
+      dimensionLine({ x1: 12.1, z1: 0, x2: 12.1, z2: 13.3, text: "13.3 ft", color: "magenta" });
+      dimensionLine({ x1: 0, z1: 14.7, x2: 10.7, z2: 14.7, text: "10.7 ft" });
+      dimensionLine({ x1: 1.9, z1: 0, x2: 1.9, z2: P.rearZ, text: "23.8 ft", color: "magenta" });
+
+      [[4, 4.5], [9.5, 4.5], [14.8, 6], [4.5, 18.5], [9, 14.5], [13, 21.3], [17.6, 17.4]].forEach(([x, z]) => addLightDisc(x, z));
+    }
+
+    function buildHallAndPantryBlock() {
+      // Hallway from the kitchen past the pantry to the bedroom/office vestibule.
+      floorRect(P.livingE, P.hallS, P.offClosetW - P.livingE, P.hallN - P.hallS, "hallway floor");
+      floorRect(P.livingE, P.pantryS, P.blockE - P.livingE, P.hallS - P.pantryS, "pantry floor");
+      floorRect(P.livingE, 0, 2.6, P.pantryS, "entry closet floor");
+      floorRect(P.bedClosetW, 0, P.closetDoorX - P.bedClosetW, P.pantryS, "bedroom closet floor");
+
+      // Pantry: west wall, south wall, and a doored opening onto the hallway.
+      wallZ(P.livingE, P.pantryS, P.hallS, { name: "pantry west wall" });
+      wallX(P.livingE, 19.6, P.hallS, { name: "pantry north wall" });
+      doorPanel({ x: 21.05, z: P.hallS + 0.02, width: 2.6, orientation: "x", label: "pantry door" });
+      addFrameX(19.65, 22.45, P.hallS);
+      wallX(22.5, P.blockE, P.hallS, { name: "pantry north wall east stub" });
+      wallX(P.livingE, P.blockE, P.pantryS, { name: "pantry south wall" });
+      // Pantry shelving hint (U along west, south, east interior).
+      box({ x: 17.85, z: 4.0, w: 0.9, h: 5.4, d: 4.6, material: matCabinetLight, name: "pantry shelves west" });
+      box({ x: 23.15, z: 4.0, w: 0.9, h: 5.4, d: 4.6, material: matCabinetLight, name: "pantry shelves east" });
+      box({ x: 18.75, z: 3.75, w: 4.4, h: 5.4, d: 0.85, material: matCabinetLight, name: "pantry shelves south" });
+      addLabel("Pantry", 20.9, 1.1, 6.4, 0x555555, 0.6);
+
+      // Entry closet right next to the front door, opening west.
+      wallZ(20.0, 0, P.pantryS, { name: "entry closet east wall" });
+      wallZ(P.livingE, 0, 0.5, { name: "entry closet jamb" });
+      addBifoldDoorsOnZWall(P.livingE + 0.02, 0.55, 3.0, -1);
+      addLabel("Entry Closet", 18.7, 0.95, 1.7, 0x555555, 0.45);
+
+      // Bedroom closet under the pantry, entered from the bedroom side.
+      wallZ(P.bedClosetW, 0, P.pantryS, { name: "bedroom closet west wall" });
+      wallZ(P.closetDoorX, 0, 0.5, { name: "bedroom closet door jamb" });
+      doorPanel({ x: P.closetDoorX, z: 1.8, width: 2.4, orientation: "z", label: "bedroom closet door" });
+      addFrameZ(P.closetDoorX, 0.55, 3.05);
+      addLabel("Closet", 21.6, 0.95, 1.8, 0x555555, 0.48);
+
+      // Bath core south wall with the pocket door, then the office-door wall segment.
+      wallX(P.kitchenE, 24.3, P.hallN, { name: "bath core south wall" });
+      addFrameX(24.3, 26.9, P.hallN);
+      box({ x: 24.35, z: P.hallN - 0.04, w: 2.5, h: 6.85, d: 0.08, material: matDoor, name: "bathroom pocket door (closed)" });
+      wallX(26.9, P.officeW, P.hallN, { name: "bath core south wall" });
+
+      // Vestibule east wall between bedroom door and office closet.
+      wallZ(P.offClosetW, P.hallS, P.hallN, { name: "vestibule east wall" });
+
+      addRoomLabel("Hallway", 26.6, 10.9, 0x555555);
+      addLabel("Attic Access", 29.4, 0.5, 10.9, 0x777777, 0.42);
+      dimensionLine({ x1: 16.7, z1: P.pantryS, x2: 16.7, z2: P.hallS, text: "5.9 ft", color: "magenta" });
+      addLightDisc(26.5, 10.9);
+    }
+
+    function buildBathCore() {
+      // Context volume: bathrooms, linen, furnace, and water heater between kitchen and office.
+      floorRect(P.kitchenE, P.hallN, P.officeW - P.kitchenE, P.rearZ - P.hallN, "bath core floor");
+      wallX(P.kitchenE, P.officeW, P.rearZ, { name: "rear wall over bath core", context: true, h: 5.2, noTrim: true });
+      box({ x: 20.45, z: 18.4, w: 2.0, h: 7.0, d: 2.3, material: matWallContext, name: "linen cabinet" });
+      box({ x: 26.5, z: 19.5, w: 2.0, h: 6.0, d: 2.0, material: matWallContext, name: "furnace" });
+      const hw = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 4.6, 20), matWallContext);
+      hw.position.set(29.8, 2.3, 22.3);
+      hw.name = "water heater";
+      model.add(hw);
+      registerHouseCollider({ x: 28.85, z: 21.35, w: 1.9, h: 4.6, d: 1.9, name: "water heater" });
+      box({ x: 27.9, z: 13.2, w: 2.6, h: 4.4, d: 3.2, material: matWallContext, name: "shower stall" });
+      box({ x: 20.9, z: 15.9, w: 1.4, h: 1.3, d: 1.9, material: matWallContext, name: "toilet" });
+      addRoomLabel("Bath / Utility", 25.6, 20.6, 0x8a8a84);
+    }
+
+    function buildGarage() {
+      const concrete = new THREE.MeshStandardMaterial({ color: 0xbfbdb6, roughness: 0.95 });
+      box({ x: P.garW, z: P.garS, w: -P.garW, h: 0.06, d: P.rearZ - P.garS, y: -0.06, material: concrete, name: "garage slab", cast: false });
+      wallZ(P.garW, P.garS, P.rearZ, { name: "garage west wall", context: true, h: 5.2, noTrim: true });
+      wallX(P.garW, 0, P.rearZ, { name: "garage rear wall", context: true, h: 5.2, noTrim: true });
+      // Front wall with the vehicle door opening (10.7 ft) set back 2.1 ft from the house front.
+      wallX(P.garW, -12.55, P.garS, { name: "garage front wall", context: true, h: 5.2, noTrim: true });
+      wallX(-1.85, 0, P.garS, { name: "garage front wall", context: true, h: 5.2, noTrim: true });
+      box({ x: -12.55, z: P.garS - 0.1, w: 10.7, h: 0.5, d: 0.2, y: 4.7, material: matWallContext, name: "garage door header" });
+      addRoomLabel("Garage", -7.6, 12.3, 0x8a8a84);
+      dimensionLine({ x1: P.garW, z1: 6.3, x2: 0, z2: 6.3, text: "14.0 ft" });
+      dimensionLine({ x1: -11.9, z1: P.garS, x2: -11.9, z2: P.rearZ, text: "21.7 ft", color: "magenta" });
+    }
+
+    function buildBedroom() {
+      const x = P.blockE;
+      const z = 0;
+      const w = P.eastE - P.blockE; // 19.2
+      const d = P.hallS;            // 9.2
+      floorRect(x, z, w, d, "bedroom main floor");
+      floorRect(P.closetDoorX, z, x - P.closetDoorX, P.pantryS, "bedroom nook floor");
+      addFocusBand(x, z, w, d, 0xd33d86);
+      addFocusBand(P.closetDoorX, z, x - P.closetDoorX, P.pantryS, 0xd33d86);
+      outlineRect(x, z, w, d, 0xd33d86);
+
+      // Front wall with the bedroom window.
+      wallX(P.blockE, 32.9, z, { name: "bedroom front wall" });
+      windowX(32.9, 35.8, z, 2.55, 3.1, "bedroom front window");
+      wallX(35.8, P.eastE, z, { name: "bedroom front wall" });
+
+      // East exterior wall with the side window; runs up past the office closet cavity.
+      wallZ(P.eastE, z, 3.9, { name: "bedroom east wall" });
+      windowZ(P.eastE, 3.9, 6.7, 2.55, 3.1, "bedroom side window");
+      wallZ(P.eastE, 6.7, P.offClosetBack, { name: "bedroom east wall" });
+
+      // North wall: door sits 7.5-10 ft from the west wall, across from the office door.
+      wallX(x, 32.0, z + d, { name: "bedroom hall wall" });
+      doorPanel({ x: 33.25, z: z + d - 0.02, width: 2.4, orientation: "x", label: "bedroom hall door" });
+      addFrameX(32.0, 34.5, z + d);
+      wallX(34.5, P.eastE, z + d, { name: "bedroom hall wall" });
+
+      // West wall stops at the pantry block; below it the closet-door nook.
+      wallZ(x, P.pantryS, d, { name: "bedroom west wall" });
+
+      addRoomLabel("Bedroom", x + 9.6, 4.6);
+      dimensionLine({ x1: x, z1: 4.0, x2: x + w, z2: 4.0, text: "19.2 ft" });
+      dimensionLine({ x1: 27.4, z1: z, x2: 27.4, z2: z + d, text: "9.2 ft", color: "magenta" });
+      [[29, 4.6], [38.5, 4.6]].forEach(([lx, lz]) => addLightDisc(lx, lz));
+    }
+
+    function buildOffice() {
+      const x = P.officeW;
+      const w = P.eastE - P.officeW; // 11.8
+      floorRect(x, P.hallN, w, P.rearZ - P.hallN, "office main floor");
+      floorRect(P.offClosetW, P.offClosetBack, P.eastE - P.offClosetW, P.hallN - P.offClosetBack, "office closet floor");
+      addFocusBand(x, P.hallN, w, P.rearZ - P.hallN, 0x176a68);
+      outlineRect(x, P.hallN, w, P.rearZ - P.hallN, 0x176a68);
+
+      // West wall runs 11.1 ft down from the rear wall to the door wall.
+      wallZ(x, P.hallN, P.rearZ, { name: "office west wall" });
+
+      // South wall (west segment) holds the office door off the vestibule.
+      wallX(x, 32.7, P.hallN, { name: "office door wall" });
+      doorPanel({ x: 34.05, z: P.hallN + 0.02, width: 2.7, orientation: "x", label: "office hall door" });
+      addFrameX(32.75, 35.45, P.hallN);
+      wallX(35.5, P.offClosetW, P.hallN, { name: "office door wall" });
+
+      // Accordion closet across the east portion of the south side.
+      wallZ(P.offClosetW, P.offClosetBack, P.hallN, { name: "office closet west wall" });
+      addBifoldDoorsOnXWall(P.offClosetW + 0.25, P.eastE - 0.25, P.offClosetZ, 1);
+      wallX(P.offClosetW, P.eastE, P.offClosetBack, { name: "office closet back wall" });
+
+      // Rear wall with the garden slider; east wall with the large window.
+      wallX(x, 34.9, P.rearZ, { name: "office rear wall" });
+      slidingDoorX(34.9, 40.8, P.rearZ, "office garden slider");
+      wallX(40.8, P.eastE, P.rearZ, { name: "office rear wall" });
+      wallZ(P.eastE, P.offClosetBack, P.rearZ, { name: "office east wall" });
+
+      addMiniSplit({ x: P.eastE - 0.28, z: 14.2, orientation: "z", name: "office mini split" });
+
+      addRoomLabel("Office", x + 5.6, 18.6);
+      addLabel("Accordion Closet", 40.0, 1.15, P.offClosetZ - 0.65, 0x555555, 0.55);
+      dimensionLine({ x1: x, z1: 22.6, x2: x + w, z2: 22.6, text: "11.8 ft" });
+      dimensionLine({ x1: P.eastE - 0.72, z1: P.offClosetZ, x2: P.eastE - 0.72, z2: P.rearZ, text: "12.2 ft", color: "magenta" });
+      dimensionLine({ x1: x + 0.9, z1: P.hallN, x2: x + 0.9, z2: P.rearZ, text: "11.1 ft", color: "magenta" });
+      [[x + 2.8, 16.2], [x + 8.3, 16.2], [x + 5.5, 20.8]].forEach(([lx, lz]) => addLightDisc(lx, lz));
+    }
+
+    // ---------- Furniture catalog (dimensions in feet, from the annotated photos) ----------
+    const matFurnWood = new THREE.MeshStandardMaterial({ color: 0x53311f, roughness: 0.48 });
+    const matFurnWoodDark = new THREE.MeshStandardMaterial({ color: 0x3b2214, roughness: 0.5 });
+    const matFurnTop = new THREE.MeshStandardMaterial({ color: 0x6a422a, roughness: 0.4 });
+    const matLeather = new THREE.MeshStandardMaterial({ color: 0x33251d, roughness: 0.62 });
+    const matPillow = new THREE.MeshStandardMaterial({ color: 0xd9cfbf, roughness: 0.92 });
+    const matBedding = new THREE.MeshStandardMaterial({ color: 0xefe8da, roughness: 0.9 });
+    const matBoxSpring = new THREE.MeshStandardMaterial({ color: 0xc9bda9, roughness: 0.95 });
+    const matMirror = new THREE.MeshStandardMaterial({ color: 0xb9ced6, metalness: 0.85, roughness: 0.06 });
+    const matBasket = new THREE.MeshStandardMaterial({ color: 0x8a6b42, roughness: 0.85 });
+    const matPlantPot = new THREE.MeshStandardMaterial({ color: 0x99593a, roughness: 0.82 });
+    const matPlant = new THREE.MeshStandardMaterial({ color: 0x41693c, roughness: 0.88 });
+    const matBookRed = new THREE.MeshStandardMaterial({ color: 0x7b2f24, roughness: 0.7 });
+    const matBookBlue = new THREE.MeshStandardMaterial({ color: 0x253f5f, roughness: 0.72 });
+    const matBookGreen = new THREE.MeshStandardMaterial({ color: 0x465234, roughness: 0.75 });
+    const matBookGold = new THREE.MeshStandardMaterial({ color: 0xb38a45, roughness: 0.58 });
+    const matOfficeBlack = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.62 });
+    const matOfficeFabric = new THREE.MeshStandardMaterial({ color: 0x1f2022, roughness: 0.88 });
+    const matOfficeCouchLeather = new THREE.MeshStandardMaterial({ color: 0x201b16, roughness: 0.5, metalness: 0.05 });
+    const matOfficeCouchSeam = new THREE.MeshStandardMaterial({ color: 0x0f0d0b, roughness: 0.72 });
+    const matPillowGreen = new THREE.MeshStandardMaterial({ color: 0xa9b47c, roughness: 0.9 });
+    const matPillowTaupe = new THREE.MeshStandardMaterial({ color: 0x8b7865, roughness: 0.92 });
+
+    const furniturePieces = [];
+    const FURN_STORE_KEY = "burnside-furniture-v1";
+    const SNAP = 1 / 6; // 2-inch placement grid
+
+    function fpart(g, x, y, z, w, h, d, material, name = "furniture part") {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+      mesh.position.set(x, y + h / 2, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.name = name;
+      g.add(mesh);
+      return mesh;
+    }
+
+    function counterStoolB(w, d, h) {
+      return (g) => {
+        const seat = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.42, w * 0.42, 0.16, 28), matCabinet);
+        seat.position.set(0, h - 0.15, 0);
+        seat.castShadow = true;
+        seat.receiveShadow = true;
+        seat.name = "counter stool round seat";
+        g.add(seat);
+
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, h - 0.68, 16), matMetal);
+        post.position.set(0, 0.42 + (h - 0.68) / 2, 0);
+        post.castShadow = true;
+        post.receiveShadow = true;
+        post.name = "counter stool metal post";
+        g.add(post);
+
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.33, w * 0.39, 0.07, 24), matMetal);
+        base.position.set(0, 0.34, 0);
+        base.castShadow = true;
+        base.receiveShadow = true;
+        base.name = "counter stool weighted base";
+        g.add(base);
+
+        const footRing = new THREE.Mesh(new THREE.TorusGeometry(w * 0.27, 0.025, 8, 28), matMetal);
+        footRing.position.set(0, 1.08, 0);
+        footRing.rotation.x = Math.PI / 2;
+        footRing.castShadow = true;
+        footRing.receiveShadow = true;
+        footRing.name = "counter stool foot ring";
+        g.add(footRing);
+      };
+    }
+
+    function sofaB(w, d, h, seats) {
+      return (g) => {
+        fpart(g, 0, 0.2, 0.12, w, 0.85, d - 0.25, matLeather, "sofa base");
+        fpart(g, 0, 0.2, -d / 2 + 0.32, w, h - 0.2, 0.64, matLeather, "sofa back");
+        fpart(g, -w / 2 + 0.28, 0.2, 0.06, 0.56, h * 0.72, d - 0.15, matLeather, "sofa arm");
+        fpart(g, w / 2 - 0.28, 0.2, 0.06, 0.56, h * 0.72, d - 0.15, matLeather, "sofa arm");
+        const inner = w - 1.12;
+        const cw = inner / seats - 0.05;
+        for (let i = 0; i < seats; i += 1) {
+          const cx = -inner / 2 + (i + 0.5) * (inner / seats);
+          fpart(g, cx, 1.05, 0.3, cw, 0.42, d - 1.15, matLeather, "sofa cushion");
+        }
+        fpart(g, -w * 0.2, 1.45, -d / 2 + 0.72, 1.25, 1.05, 0.34, matPillow, "pillow");
+        fpart(g, w * 0.2, 1.45, -d / 2 + 0.72, 1.25, 1.05, 0.34, matPillow, "pillow");
+      };
+    }
+
+    function officeCouchB(w, d, h) {
+      return (g) => {
+        const armW = 0.58;
+        const seatH = 1.12;
+        const cushionH = 0.34;
+        const footH = 0.18;
+        const innerW = w - armW * 2;
+        const seatW = innerW / 3;
+
+        fpart(g, 0, footH, 0.12, w - 0.16, 0.72, d - 0.2, matOfficeCouchLeather, "office couch lower leather apron");
+        fpart(g, 0, 0, 0.14, w - 0.08, footH, d - 0.15, matOfficeCouchSeam, "office couch black plinth");
+        fpart(g, -w / 2 + armW / 2, footH, 0.05, armW, h - footH - 0.06, d, matOfficeCouchLeather, "office couch left block arm");
+        fpart(g, w / 2 - armW / 2, footH, 0.05, armW, h - footH - 0.06, d, matOfficeCouchLeather, "office couch right block arm");
+        fpart(g, 0, footH, -d / 2 + 0.23, w - 0.18, h - footH, 0.46, matOfficeCouchLeather, "office couch tall leather back");
+        fpart(g, 0, h - 0.13, -d / 2 + 0.3, w - 0.25, 0.13, 0.38, matOfficeCouchSeam, "office couch rounded back cap");
+
+        for (let i = 0; i < 3; i += 1) {
+          const cx = -innerW / 2 + seatW * (i + 0.5);
+          fpart(g, cx, seatH, 0.32, seatW - 0.06, cushionH, d - 1.0, matOfficeCouchLeather, "office couch separate seat cushion");
+          fpart(g, cx, seatH + cushionH - 0.03, d / 2 - 0.45, seatW - 0.11, 0.07, 0.22, matOfficeCouchSeam, "office couch cushion front welt");
+          fpart(g, cx, 0.34, d / 2 - 0.39, seatW - 0.08, 0.68, 0.08, matOfficeCouchLeather, "office couch lower front panel");
+          if (i > 0) {
+            const sx = -innerW / 2 + seatW * i;
+            fpart(g, sx, 0.42, d / 2 - 0.37, 0.045, 0.78, 0.09, matOfficeCouchSeam, "office couch lower vertical seam");
+            fpart(g, sx, seatH, 0.32, 0.045, cushionH + 0.08, d - 1.0, matOfficeCouchSeam, "office couch cushion separation");
+            fpart(g, sx, seatH + cushionH + 0.02, -d / 2 + 0.5, 0.045, h - seatH - cushionH - 0.25, 0.12, matOfficeCouchSeam, "office couch back vertical seam");
+          }
+        }
+
+        const pillow = (x, y, z, pw, ph, pd, material, name, rot = 0) => {
+          const mesh = fpart(g, x, y, z, pw, ph, pd, material, name);
+          mesh.rotation.z = rot;
+          return mesh;
+        };
+        pillow(-w * 0.26, seatH + 0.28, -d / 2 + 0.72, 1.12, 0.82, 0.18, matPillowGreen, "office couch green throw pillow", -0.16);
+        pillow(w * 0.24, seatH + 0.34, -d / 2 + 0.68, 1.06, 0.76, 0.18, matPillowGreen, "office couch rear green throw pillow", 0.06);
+        pillow(w * 0.21, seatH + 0.22, -d / 2 + 0.86, 0.98, 0.66, 0.2, matPillowTaupe, "office couch taupe throw pillow", -0.05);
+
+        [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => {
+          fpart(g, sx * (w / 2 - 0.28), 0, sz * (d / 2 - 0.25), 0.24, 0.22, 0.24, matOfficeCouchSeam, "office couch short square foot");
+        }));
+      };
+    }
+
+    function bedB(w, l, headH) {
+      return (g) => {
+        fpart(g, 0, 0, 0, w, 1.15, l, matFurnWood, "bed platform");
+        fpart(g, 0, 1.15, 0.2, w - 0.35, 0.75, l - 1.2, matBedding, "mattress");
+        fpart(g, 0, 0, -l / 2 + 0.16, w, headH, 0.32, matFurnWood, "headboard");
+        fpart(g, 0, 0, l / 2 - 0.14, w, 1.65, 0.28, matFurnWood, "footboard");
+        fpart(g, -w * 0.22, 1.9, -l / 2 + 1.35, w * 0.34, 0.4, 1.4, matPillow, "pillow");
+        fpart(g, w * 0.22, 1.9, -l / 2 + 1.35, w * 0.34, 0.4, 1.4, matPillow, "pillow");
+      };
+    }
+
+    function queenMattressBoxB(w, d) {
+      return (g) => {
+        const legH = 0.43;
+        const railH = 0.12;
+        const railT = 0.12;
+        const frameH = legH + railH;
+        const boxH = 0.78;
+        const mattressH = 1.0;
+        const coverH = 0.12;
+        const boxY = frameH;
+        const mattressY = boxY + boxH;
+        const topY = mattressY + mattressH;
+
+        fpart(g, 0, legH, -d / 2 + railT / 2, w, railH, railT, matMetal, "queen low metal frame head rail");
+        fpart(g, 0, legH, d / 2 - railT / 2, w, railH, railT, matMetal, "queen low metal frame foot rail");
+        fpart(g, -w / 2 + railT / 2, legH, 0, railT, railH, d, matMetal, "queen low metal frame side rail");
+        fpart(g, w / 2 - railT / 2, legH, 0, railT, railH, d, matMetal, "queen low metal frame side rail");
+        [-0.34, 0, 0.34].forEach((zRatio) => {
+          fpart(g, 0, legH + 0.02, d * zRatio, w - 0.34, 0.08, 0.08, matMetal, "queen low metal frame cross support");
+        });
+        [-1, 0, 1].forEach((xRatio) => {
+          [-1, 1].forEach((zSide) => {
+            const legW = xRatio === 0 ? 0.1 : 0.12;
+            fpart(g, xRatio * (w / 2 - 0.28), 0, zSide * (d / 2 - 0.28), legW, legH, legW, matMetal, "queen low metal frame short leg");
+          });
+        });
+
+        fpart(g, 0, boxY, 0, w, boxH, d, matBoxSpring, "queen box foundation");
+        fpart(g, 0, mattressY, 0, w - 0.08, mattressH, d - 0.08, matBedding, "queen mattress");
+        fpart(g, 0, topY, d * 0.12, w - 0.28, coverH, d * 0.58, matPillow, "plain queen bed cover");
+        fpart(g, 0, topY + coverH, d * 0.34, w - 0.34, 0.1, d * 0.16, matBedding, "folded cover edge");
+        fpart(g, -w * 0.23, topY + coverH, -d / 2 + 0.72, w * 0.36, 0.34, 1.05, matPillow, "queen pillow");
+        fpart(g, w * 0.23, topY + coverH, -d / 2 + 0.72, w * 0.36, 0.34, 1.05, matPillow, "queen pillow");
+      };
+    }
+
+    function chestB(w, d, h, drawers) {
+      return (g) => {
+        fpart(g, 0, 0.2, 0, w, h - 0.35, d, matFurnWood, "chest body");
+        fpart(g, 0, h - 0.14, 0, w + 0.12, 0.14, d + 0.1, matFurnTop, "chest top");
+        fpart(g, 0, 0, 0, w + 0.06, 0.26, d + 0.06, matFurnWoodDark, "chest base");
+        const band = (h - 0.75) / drawers;
+        for (let i = 0; i < drawers; i += 1) {
+          fpart(g, 0, 0.42 + i * band + 0.07, d / 2 - 0.01, w - 0.45, band - 0.16, 0.08, matFurnWoodDark, "drawer front");
+        }
+      };
+    }
+
+    function tallChestB(w, d, h, lowerRows = 4) {
+      return (g) => {
+        fpart(g, 0, 0.2, 0, w, h - 0.35, d, matFurnWood, "tall chest body");
+        fpart(g, 0, h - 0.14, 0, w + 0.18, 0.14, d + 0.12, matFurnTop, "tall chest top");
+        fpart(g, 0, 0, 0, w + 0.12, 0.28, d + 0.08, matFurnWoodDark, "tall chest base");
+
+        const frontZ = d / 2 - 0.01;
+        const pullZ = d / 2 + 0.045;
+        const bottom = 0.42;
+        const topLimit = h - 0.52;
+        const gap = 0.07;
+        const topRowH = Math.min(0.68, (topLimit - bottom) * 0.2);
+        const lowerH = (topLimit - bottom - topRowH - gap * lowerRows) / lowerRows;
+        const inset = 0.28;
+        const lowerW = w - inset * 2;
+        const smallW = (lowerW - 0.08) / 2;
+
+        const addKnob = (x, y, name) => {
+          const knob = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 8), matMetal);
+          knob.position.set(x, y, pullZ);
+          knob.name = name;
+          knob.castShadow = true;
+          g.add(knob);
+        };
+
+        for (let i = 0; i < lowerRows; i += 1) {
+          const y = bottom + i * (lowerH + gap);
+          const drawerH = Math.max(0.18, lowerH);
+          fpart(g, 0, y, frontZ, lowerW, drawerH, 0.08, matFurnWoodDark, "tall chest wide drawer front");
+          addKnob(-lowerW * 0.22, y + drawerH * 0.48, "tall chest wide drawer knob");
+          addKnob(lowerW * 0.22, y + drawerH * 0.48, "tall chest wide drawer knob");
+        }
+
+        const topY = bottom + lowerRows * (lowerH + gap);
+        [-1, 1].forEach((sx) => {
+          const cx = sx * (smallW / 2 + 0.04);
+          fpart(g, cx, topY, frontZ, smallW, topRowH, 0.08, matFurnWoodDark, "tall chest split top drawer front");
+          addKnob(cx, topY + topRowH * 0.5, "tall chest split top drawer knob");
+        });
+      };
+    }
+
+    function kingNightstandB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, 0.2, 0, w, h - 0.35, d, matFurnWood, "king nightstand narrow body");
+        fpart(g, 0, h - 0.14, 0, w + 0.14, 0.14, d + 0.1, matFurnTop, "king nightstand top");
+        fpart(g, 0, 0, 0, w + 0.08, 0.26, d + 0.06, matFurnWoodDark, "king nightstand base");
+        fpart(g, 0, h - 0.36, d / 2 + 0.01, w - 0.34, 0.08, 0.07, matFurnTop, "king nightstand accent rail");
+        const drawers = 3;
+        const band = (h - 0.75) / drawers;
+        for (let i = 0; i < drawers; i += 1) {
+          const y = 0.42 + i * band + 0.07;
+          const drawerH = band - 0.16;
+          fpart(g, 0, y, d / 2 - 0.01, w - 0.42, drawerH, 0.08, matFurnWoodDark, "king nightstand narrow drawer front");
+          fpart(g, 0, y + drawerH * 0.46, d / 2 + 0.045, 0.46, 0.055, 0.055, matMetal, "king nightstand metal drawer pull");
+        }
+      };
+    }
+
+    function dresserMirrorB(w, d, bodyH, totalH) {
+      return (g) => {
+        chestB(w, d, bodyH, 3)(g);
+        const mirW = w * 0.72;
+        fpart(g, 0, bodyH, -d / 2 + 0.1, mirW + 0.3, totalH - bodyH, 0.1, matFurnWood, "mirror frame");
+        fpart(g, 0, bodyH + 0.22, -d / 2 + 0.17, mirW, totalH - bodyH - 0.55, 0.05, matMirror, "mirror");
+      };
+    }
+
+    function chinaB(w, d, totalH) {
+      return (g) => {
+        const lowerH = 2.7;
+        fpart(g, 0, 0.15, 0, w, lowerH - 0.15, d, matFurnWood, "hutch lower");
+        fpart(g, 0, 0, 0, w + 0.06, 0.24, d + 0.06, matFurnWoodDark, "hutch base");
+        fpart(g, 0, lowerH, -d * 0.12, w, totalH - lowerH - 0.3, d * 0.76, matFurnWoodDark, "hutch upper");
+        fpart(g, 0, lowerH + 0.35, d * 0.26 + 0.02, w - 0.55, totalH - lowerH - 1.05, 0.05, matGlass, "hutch glass doors");
+        fpart(g, 0, totalH - 0.3, -d * 0.12, w + 0.2, 0.3, d * 0.82, matFurnTop, "hutch crown");
+      };
+    }
+
+    function bookshelfB(w, d, h, shelves) {
+      return (g) => {
+        fpart(g, 0, 0, -d / 2 + 0.05, w, h, 0.1, matFurnWoodDark, "bookshelf back");
+        fpart(g, -w / 2 + 0.06, 0, 0, 0.12, h, d, matFurnWood, "bookshelf side");
+        fpart(g, w / 2 - 0.06, 0, 0, 0.12, h, d, matFurnWood, "bookshelf side");
+        fpart(g, 0, h - 0.12, 0, w, 0.12, d, matFurnTop, "bookshelf top");
+        fpart(g, 0, 0, 0, w, 0.28, d, matFurnWood, "bookshelf kick");
+        for (let i = 1; i <= shelves; i += 1) {
+          fpart(g, 0, 0.28 + i * ((h - 0.55) / (shelves + 1)), 0.03, w - 0.24, 0.08, d - 0.14, matFurnWood, "shelf");
+        }
+      };
+    }
+
+    function officeShelfB(w, d, h) {
+      return (g) => {
+        const lowerH = 2.18;
+        const crownH = 0.34;
+        const sideBayW = 1.12;
+        const postW = 0.13;
+        const centerW = w - sideBayW * 2 - postW * 2;
+        const leftX = -w / 2 + sideBayW / 2;
+        const rightX = w / 2 - sideBayW / 2;
+        const centerX = 0;
+        const leftDividerX = -centerW / 2 - postW / 2;
+        const rightDividerX = centerW / 2 + postW / 2;
+        const upperH = h - lowerH - crownH;
+        const shelfDepth = d - 0.18;
+        const frontZ = d / 2 + 0.03;
+
+        fpart(g, 0, 0.18, 0, w, lowerH - 0.18, d, matFurnWood, "office shelf lower cabinet body");
+        fpart(g, 0, 0, 0, w + 0.12, 0.3, d + 0.08, matFurnWoodDark, "office shelf plinth base");
+        fpart(g, 0, lowerH - 0.1, 0, w + 0.1, 0.16, d + 0.1, matFurnTop, "office shelf waist rail");
+        fpart(g, 0, lowerH, -d / 2 + 0.05, w, upperH, 0.1, matFurnWoodDark, "office shelf dark back");
+
+        [-w / 2 + 0.07, leftDividerX, rightDividerX, w / 2 - 0.07].forEach((x) => {
+          fpart(g, x, lowerH, 0, postW, upperH, d, matFurnWood, "office shelf vertical bay divider");
+          fpart(g, x, 0.25, frontZ - 0.08, postW + 0.02, lowerH - 0.25, 0.12, matFurnWoodDark, "office shelf lower stile");
+        });
+
+        const doorFront = (cx, bottomY, doorW, doorH, knobSide, name) => {
+          fpart(g, cx, bottomY, frontZ, doorW, doorH, 0.07, matFurnWoodDark, name);
+          fpart(g, cx, bottomY + 0.18, frontZ + 0.04, doorW - 0.22, doorH - 0.36, 0.035, matFurnWood, `${name} raised panel`);
+          const knob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 8), matMetal);
+          knob.position.set(cx + knobSide * (doorW / 2 - 0.12), bottomY + doorH * 0.52, frontZ + 0.08);
+          knob.name = `${name} knob`;
+          knob.castShadow = true;
+          g.add(knob);
+        };
+
+        const doorY = 0.46;
+        const doorH = lowerH - 0.83;
+        doorFront(leftX, doorY, sideBayW - 0.28, doorH, 1, "office shelf left lower door");
+        doorFront(rightX, doorY, sideBayW - 0.28, doorH, -1, "office shelf right lower door");
+        const centerDoorW = (centerW - 0.34) / 4;
+        for (let i = 0; i < 4; i += 1) {
+          const cx = -centerW / 2 + centerDoorW / 2 + i * (centerDoorW + 0.08);
+          doorFront(cx, doorY, centerDoorW, doorH, i < 2 ? 1 : -1, "office shelf center lower door");
+        }
+
+        const shelfBoard = (cx, bayW, y, name) => {
+          fpart(g, cx, y, 0.03, bayW - 0.18, 0.08, shelfDepth, matFurnWood, name);
+        };
+        shelfBoard(centerX, centerW, lowerH + 1.1, "office shelf wide middle shelf");
+        shelfBoard(centerX, centerW, lowerH + 2.35, "office shelf wide middle shelf");
+        shelfBoard(centerX, centerW, lowerH + 3.58, "office shelf wide middle shelf");
+        [leftX, rightX].forEach((cx) => {
+          [0.72, 1.68, 2.64, 3.6].forEach((offset) => {
+            shelfBoard(cx, sideBayW, lowerH + offset, "office shelf side shelf");
+          });
+        });
+
+        const bookMats = [matBookGold, matBookRed, matBookBlue, matBookGreen, matBasket, matFurnTop];
+        const books = (cx, y, count, totalW, name) => {
+          let cursor = cx - totalW / 2;
+          for (let i = 0; i < count; i += 1) {
+            const bw = 0.09 + (i % 3) * 0.025;
+            const bh = 0.44 + (i % 4) * 0.08;
+            cursor += bw / 2;
+            fpart(g, cursor, y, d / 2 - 0.18, bw, bh, 0.16, bookMats[i % bookMats.length], name);
+            cursor += bw / 2 + 0.02;
+          }
+        };
+        books(centerX - 0.65, lowerH + 1.18, 12, 1.55, "office shelf center books");
+        books(centerX + 0.55, lowerH + 2.43, 9, 1.25, "office shelf center books");
+        books(leftX, lowerH + 0.78, 5, 0.62, "office shelf side books");
+        books(leftX + 0.02, lowerH + 2.72, 6, 0.7, "office shelf side books");
+        books(rightX - 0.02, lowerH + 1.74, 6, 0.72, "office shelf side books");
+        books(rightX, lowerH + 3.66, 5, 0.62, "office shelf side books");
+
+        fpart(g, centerX + 0.58, lowerH + 3.82, d / 2 - 0.2, 0.62, 0.42, 0.05, matMirror, "office shelf framed photo");
+        fpart(g, centerX - 0.45, lowerH + 3.8, d / 2 - 0.21, 0.45, 0.34, 0.05, matBedding, "office shelf certificate");
+        fpart(g, centerX - 0.05, lowerH + 1.04, d / 2 - 0.16, 0.42, 0.42, 0.05, matBookGold, "office shelf display medallion");
+
+        fpart(g, 0, h - crownH, 0, w + 0.18, 0.12, d + 0.1, matFurnTop, "office shelf crown lower band");
+        fpart(g, 0, h - 0.22, 0, w + 0.28, 0.22, d + 0.18, matFurnWoodDark, "office shelf overhanging crown");
+        fpart(g, 0, h - 0.04, 0, w + 0.08, 0.08, d + 0.04, matFurnTop, "office shelf top cap");
+      };
+    }
+
+    function officeDeskB(w, d, h) {
+      return (g) => {
+        const topH = 0.22;
+        const baseH = 0.34;
+        const bodyH = h - topH - baseH;
+        const frontZ = d / 2 + 0.035;
+        const sideX = w / 2 + 0.035;
+
+        fpart(g, 0, baseH, 0, w - 0.18, bodyH, d - 0.12, matFurnWood, "office desk cabinet body");
+        fpart(g, 0, 0, 0, w + 0.08, baseH, d + 0.08, matFurnWoodDark, "office desk plinth base");
+        fpart(g, 0, 0.26, 0, w + 0.14, 0.12, d + 0.12, matFurnTop, "office desk lower molding");
+        fpart(g, 0, h - topH, 0, w + 0.24, topH, d + 0.22, matFurnTop, "office desk thick overhanging top");
+        fpart(g, 0, h - topH - 0.08, frontZ, w + 0.18, 0.16, 0.08, matFurnWoodDark, "office desk front apron");
+        fpart(g, 0, h - topH - 0.08, -frontZ, w + 0.18, 0.16, 0.08, matFurnWoodDark, "office desk back apron");
+        fpart(g, 0, h + 0.012, 0.1, w * 0.44, 0.035, d * 0.46, matOfficeBlack, "black leather desk pad");
+
+        const panelY = 0.53;
+        const panelH = h - topH - panelY - 0.24;
+        const panelFront = (cx, pw, name) => {
+          fpart(g, cx, panelY, frontZ, pw, panelH, 0.07, matFurnWoodDark, name);
+          fpart(g, cx, panelY + 0.16, frontZ + 0.04, pw - 0.2, panelH - 0.32, 0.035, matFurnWood, `${name} raised panel`);
+        };
+        const panelSide = (sx, name) => {
+          fpart(g, sx * sideX, panelY, 0, 0.07, panelH, d - 0.55, matFurnWoodDark, name);
+          fpart(g, sx * (sideX + 0.04), panelY + 0.16, 0, 0.035, panelH - 0.32, d - 0.82, matFurnWood, `${name} raised panel`);
+        };
+
+        const panelW = (w - 0.9) / 4;
+        for (let i = 0; i < 4; i += 1) {
+          const cx = -w / 2 + 0.45 + panelW / 2 + i * panelW;
+          panelFront(cx, panelW - 0.1, "office desk front panel");
+          fpart(g, cx + panelW / 2, panelY - 0.04, frontZ + 0.01, 0.08, panelH + 0.08, 0.09, matFurnWoodDark, "office desk front stile");
+        }
+        panelSide(1, "office desk right side panel");
+        panelSide(-1, "office desk left side panel");
+
+        fpart(g, -w * 0.31, h + 0.02, -d * 0.22, 1.35, 0.38, 0.88, matAppliance, "desktop printer body");
+        fpart(g, -w * 0.31, h + 0.4, -d * 0.22, 1.22, 0.16, 0.78, matWhite, "desktop printer scanner lid");
+        fpart(g, -w * 0.31, h + 0.58, -d * 0.22, 1.05, 0.08, 0.66, matOfficeBlack, "desktop printer dark top");
+        fpart(g, -w * 0.31, h + 0.1, d * 0.03, 0.72, 0.12, 0.1, matOfficeBlack, "desktop printer paper tray");
+
+        const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.34, 16), matOfficeBlack);
+        cup.position.set(-w * 0.18, h + 0.2, -d * 0.02);
+        cup.name = "office desk pencil cup";
+        cup.castShadow = true;
+        cup.receiveShadow = true;
+        g.add(cup);
+        [matBookRed, matBookBlue, matBookGold].forEach((material, i) => {
+          const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.52, 8), material);
+          pen.position.set(-w * 0.18 + (i - 1) * 0.055, h + 0.56, -d * 0.02 + (i % 2) * 0.045);
+          pen.rotation.z = (i - 1) * 0.18;
+          pen.name = "office desk pen";
+          pen.castShadow = true;
+          g.add(pen);
+        });
+
+        fpart(g, -w * 0.08, h + 0.02, -d * 0.2, 0.52, 0.3, 0.22, matOfficeBlack, "office desk organizer");
+        fpart(g, w * 0.22, h + 0.02, -d * 0.25, 0.34, 0.12, 0.34, matFurnWoodDark, "office desk small tray");
+        fpart(g, w * 0.22, h + 0.16, -d * 0.25, 0.03, 0.65, 0.03, matBookGold, "office desk letter opener");
+      };
+    }
+
+    function officeChairB(w, d, h) {
+      return (g) => {
+        const seatBottom = 1.28;
+        const seatH = 0.34;
+        const backH = h - seatBottom - 0.28;
+        fpart(g, 0, seatBottom, 0.12, w * 0.78, seatH, d * 0.68, matOfficeFabric, "black office chair seat cushion");
+        fpart(g, 0, seatBottom + 0.14, -d / 2 + 0.17, w * 0.72, backH, 0.18, matOfficeFabric, "black office chair back");
+        fpart(g, 0, seatBottom + 0.38, -d / 2 + 0.27, w * 0.56, backH - 0.55, 0.06, matOfficeBlack, "black office chair back inset");
+        [-1, 1].forEach((sx) => {
+          fpart(g, sx * w * 0.42, seatBottom + 0.08, 0.13, 0.11, 0.62, d * 0.52, matOfficeBlack, "black office chair arm support");
+          fpart(g, sx * w * 0.42, seatBottom + 0.67, 0.13, 0.16, 0.08, d * 0.58, matOfficeBlack, "black office chair armrest");
+        });
+
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, seatBottom - 0.14, 16), matOfficeBlack);
+        post.position.set(0, (seatBottom - 0.14) / 2, 0.06);
+        post.name = "black office chair center post";
+        post.castShadow = true;
+        post.receiveShadow = true;
+        g.add(post);
+
+        for (let i = 0; i < 5; i += 1) {
+          const a = i * (Math.PI * 2 / 5);
+          const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.9), matOfficeBlack);
+          spoke.position.set(Math.sin(a) * 0.24, 0.22, 0.06 + Math.cos(a) * 0.24);
+          spoke.rotation.y = a;
+          spoke.name = "black office chair five-star base";
+          spoke.castShadow = true;
+          spoke.receiveShadow = true;
+          g.add(spoke);
+
+          const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), matOfficeBlack);
+          wheel.position.set(Math.sin(a) * 0.63, 0.1, 0.06 + Math.cos(a) * 0.63);
+          wheel.scale.y = 0.55;
+          wheel.name = "black office chair caster";
+          wheel.castShadow = true;
+          wheel.receiveShadow = true;
+          g.add(wheel);
+        }
+      };
+    }
+
+    function tvStandB(w, d, h) {
+      return (g) => {
+        chestB(w, d, h, 1)(g);
+        fpart(g, 0, h + 0.1, 0.1, 0.9, 0.12, 0.7, matAppliance, "tv foot");
+        fpart(g, 0, h + 0.22, 0, 4.35, 2.45, 0.1, matAppliance, "flat tv");
+      };
+    }
+
+    function oldTvCenterB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, 0.15, 0, w, h - 0.4, d, matFurnWood, "tv center body");
+        fpart(g, 0, 0, 0, w + 0.08, 0.26, d + 0.08, matFurnWoodDark, "tv center base");
+        fpart(g, 0, h - 0.25, 0, w + 0.15, 0.25, d + 0.1, matFurnTop, "tv center crown");
+        fpart(g, w * 0.12, 1.55, d / 2 + 0.01, w * 0.5, h * 0.42, 0.07, matAppliance, "crt tv front");
+        fpart(g, -w / 2 + w * 0.17, 1.15, d / 2 + 0.01, w * 0.26, h * 0.6, 0.05, matGlass, "glass door");
+        fpart(g, w * 0.12, 0.5, d / 2 + 0.01, w * 0.55, 0.8, 0.06, matFurnWoodDark, "drawer band");
+      };
+    }
+
+    function pianoB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, 0, -d / 2 + 0.6, w, h, 1.2, matFurnWoodDark, "piano body");
+        fpart(g, 0, 2.05, d / 2 - 0.48, w, 0.3, 0.95, matFurnWoodDark, "piano key bed");
+        fpart(g, 0, 2.35, d / 2 - 0.52, w - 0.6, 0.13, 0.6, matWhite, "piano keys");
+        fpart(g, -w / 2 + 0.28, 0, d / 2 - 0.35, 0.32, 2.05, 0.42, matFurnWoodDark, "piano leg");
+        fpart(g, w / 2 - 0.28, 0, d / 2 - 0.35, 0.32, 2.05, 0.42, matFurnWoodDark, "piano leg");
+        fpart(g, 0, 0.08, d / 2 - 0.12, 1.05, 0.32, 0.16, matMetal, "piano pedals");
+      };
+    }
+
+    function hallTreeB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, 0, -d / 2 + 0.16, w, h - 0.3, 0.32, matFurnWood, "hall tree back");
+        fpart(g, 0, 2.55, -d / 2 + 0.34, w * 0.6, h - 3.6, 0.05, matMirror, "hall tree mirror");
+        fpart(g, 0, h - 0.35, -d / 2 + 0.22, w + 0.14, 0.35, 0.52, matFurnWoodDark, "hall tree crown");
+        fpart(g, 0, 2.15, 0.12, w * 0.82, 0.14, d - 0.55, matFurnTop, "hall tree shelf");
+        fpart(g, 0, 0, 0, w * 0.86, 0.3, d - 0.3, matFurnWoodDark, "hall tree base");
+      };
+    }
+
+    function coffeeTableB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, h - 0.15, 0, w, 0.15, d, matFurnTop, "coffee table top");
+        [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => {
+          fpart(g, sx * (w / 2 - 0.2), 0, sz * (d / 2 - 0.2), 0.28, h - 0.15, 0.28, matFurnWood, "table leg");
+        }));
+        fpart(g, 0, 0.28, 0, w - 0.5, 0.1, d - 0.5, matFurnWood, "coffee table shelf");
+        fpart(g, -w * 0.22, 0.38, 0, w * 0.32, 0.55, d - 0.75, matBasket, "basket");
+        fpart(g, w * 0.22, 0.38, 0, w * 0.32, 0.55, d - 0.75, matBasket, "basket");
+      };
+    }
+
+    function consoleB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, h - 0.13, 0, w, 0.13, d, matFurnTop, "console top");
+        fpart(g, 0, h - 0.75, 0, w - 0.15, 0.62, d - 0.12, matFurnWood, "console drawers");
+        [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => {
+          fpart(g, sx * (w / 2 - 0.14), 0, sz * (d / 2 - 0.14), 0.2, h - 0.13, 0.2, matFurnWood, "console leg");
+        }));
+        fpart(g, 0, 0.22, 0, w - 0.4, 0.09, d - 0.35, matFurnWood, "console shelf");
+      };
+    }
+
+    function endTableB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, h - 0.14, 0, w - 0.15, 0.14, d - 0.15, matFurnTop, "end table top");
+        fpart(g, 0, h - 0.62, 0, w - 0.35, 0.44, d - 0.35, matFurnWood, "end table drawer");
+        fpart(g, 0, h - 0.58, d / 2 - 0.04, w - 0.42, 0.32, 0.06, matFurnWoodDark, "end table drawer front");
+        fpart(g, 0, h - 0.42, d / 2 + 0.02, 0.44, 0.06, 0.06, matMetal, "end table drawer pull");
+        [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => {
+          fpart(g, sx * (w / 2 - 0.18), 0, sz * (d / 2 - 0.18), 0.22, h - 0.14, 0.22, matFurnWood, "table leg");
+        }));
+        fpart(g, 0, 0.2, 0, w - 0.5, 0.09, d - 0.5, matFurnWood, "end table shelf");
+      };
+    }
+
+    function buffetB(w, d, h) {
+      return (g) => {
+        chestB(w, d, h, 1)(g);
+        fpart(g, -w * 0.3, 0.55, d / 2 + 0.01, w * 0.34, h - 1.5, 0.07, matFurnWoodDark, "buffet door");
+        fpart(g, w * 0.3, 0.55, d / 2 + 0.01, w * 0.34, h - 1.5, 0.07, matFurnWoodDark, "buffet door");
+        fpart(g, 0, h + 0.01, 0, 0.55, 0.85, 0.3, matFurnWoodDark, "fancy clock");
+        fpart(g, 0, h + 0.18, 0.14, 0.34, 0.34, 0.05, matMetal, "clock face");
+      };
+    }
+
+    function diningTableB(w, d, h) {
+      return (g) => {
+        fpart(g, 0, h - 0.17, 0, w, 0.17, d, matFurnTop, "dining table top");
+        [-1, 1].forEach((s) => {
+          fpart(g, s * w * 0.22, 0.28, 0, 0.52, h - 0.45, 0.52, matFurnWood, "table pedestal");
+          fpart(g, s * w * 0.22, 0, 0, 1.7, 0.3, 0.4, matFurnWood, "pedestal foot");
+          fpart(g, s * w * 0.22, 0, 0, 0.4, 0.3, 1.7, matFurnWood, "pedestal foot");
+        });
+      };
+    }
+
+    function diningChairB(w, d, h) {
+      return (g) => {
+        const seatH = 1.55;
+        [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => {
+          fpart(g, sx * (w / 2 - 0.1), 0, sz * (d / 2 - 0.1), 0.13, seatH - 0.1, 0.13, matFurnWood, "chair leg");
+        }));
+        fpart(g, 0, seatH - 0.24, 0.09, w, 0.14, d - 0.24, matFurnWood, "chair seat frame");
+        fpart(g, 0, seatH - 0.1, 0.09, w - 0.12, 0.28, d - 0.32, matPillow, "chair cushion");
+        fpart(g, -w / 2 + 0.09, seatH, -d / 2 + 0.12, 0.14, h - seatH, 0.16, matFurnWood, "chair back stile");
+        fpart(g, w / 2 - 0.09, seatH, -d / 2 + 0.12, 0.14, h - seatH, 0.16, matFurnWood, "chair back stile");
+        fpart(g, 0, h - 0.45, -d / 2 + 0.12, w - 0.22, 0.35, 0.13, matFurnWood, "chair back rail");
+        fpart(g, 0, seatH + 0.35, -d / 2 + 0.14, 0.68, h - seatH - 0.85, 0.1, matFurnWood, "chair back splat");
+      };
+    }
+
+    function liquorCabinetB(w, d, h) {
+      return (g) => {
+        // Demilune: half-oval body, flat back plane, nothing protruding behind it.
+        const footH = 0.3;
+        const bodyH = h - footH - 0.13;
+        const halfOval = (radius, height, material, y, depth) => {
+          const geo = new THREE.CylinderGeometry(radius, radius, height, 30, 1, false, 0, Math.PI);
+          geo.rotateY(-Math.PI / 2); // flat side along x, bulge toward +z
+          const mesh = new THREE.Mesh(geo, material);
+          mesh.scale.z = depth / radius;
+          mesh.position.set(0, y + height / 2, -d / 2);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          g.add(mesh);
+          return mesh;
+        };
+        halfOval(w / 2, bodyH, matFurnWood, footH, d);
+        halfOval(w / 2 + 0.06, 0.13, matFurnTop, footH + bodyH, d + 0.05);
+        // Flat back panel closes the open side of the half cylinder.
+        fpart(g, 0, footH, -d / 2 + 0.03, w, bodyH + 0.13, 0.06, matFurnWoodDark, "liquor cabinet back panel");
+        // Door hardware on the curved front.
+        fpart(g, -0.09, h * 0.42, d / 2 - 0.18, 0.07, 0.55, 0.07, matMetal, "door pull");
+        fpart(g, 0.09, h * 0.42, d / 2 - 0.18, 0.07, 0.55, 0.07, matMetal, "door pull");
+        // Turned feet under the body.
+        [-1, 1].forEach((sx) => {
+          fpart(g, sx * (w / 2 - 0.35), 0, -d / 2 + 0.3, 0.22, footH, 0.22, matFurnWoodDark, "cabinet foot");
+          fpart(g, sx * 0.5, 0, d / 2 - 0.75, 0.22, footH, 0.22, matFurnWoodDark, "cabinet foot");
+        });
+      };
+    }
+
+    function plantB(w, d, h) {
+      return (g) => {
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.32, w * 0.25, 1.05, 18), matPlantPot);
+        pot.position.y = 0.525;
+        pot.castShadow = true;
+        pot.receiveShadow = true;
+        g.add(pot);
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, h - 2.3, 10), matFurnWoodDark);
+        trunk.position.y = 1.05 + (h - 2.3) / 2;
+        trunk.castShadow = true;
+        g.add(trunk);
+        [
+          [0, h - 1.05, 0, w * 0.5],
+          [w * 0.2, h - 1.85, 0.12, w * 0.34],
+          [-w * 0.22, h - 1.6, -0.12, w * 0.3]
+        ].forEach(([x, y, z, r]) => {
+          const leaf = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), matPlant);
+          leaf.position.set(x, y, z);
+          leaf.castShadow = true;
+          g.add(leaf);
+        });
+      };
+    }
+
+    const FURNITURE_CATALOG = [
+      { id: "king-bed", name: "King Bed", w: 6.82, d: 7.75, h: 4.92, row: 0, build: bedB(6.82, 7.75, 4.92) },
+      { id: "queen-bed", name: "Queen Bed", w: 5.33, d: 7.67, h: 4.67, row: 0, build: bedB(5.33, 7.67, 4.67) },
+      { id: "queen-mattress-box", name: "Queen Mattress + Box", w: 5.0, d: 6.67, h: 2.79, row: 0, build: queenMattressBoxB(5.0, 6.67) },
+      { id: "piano", name: "Piano", w: 5.33, d: 2.17, h: 4.48, row: 0, build: pianoB(5.33, 2.17, 4.48) },
+      { id: "sofa-3", name: "Sofa 7 ft", w: 7.0, d: 2.92, h: 2.67, row: 1, build: sofaB(7.0, 2.92, 2.67, 3) },
+      { id: "loveseat", name: "Loveseat 5 ft", w: 5.0, d: 2.92, h: 2.67, row: 1, build: sofaB(5.0, 2.92, 2.67, 2) },
+      { id: "coffee-table", name: "Coffee Table", w: 4.17, d: 2.36, h: 1.67, row: 1, tablePassThrough: true, build: coffeeTableB(4.17, 2.36, 1.67) },
+      { id: "end-table-1", name: "End Table", w: 2.17, d: 2.17, h: 2.0, row: 1, tablePassThrough: true, build: endTableB(2.17, 2.17, 2.0) },
+      { id: "kitchen-console", name: "Kitchen Console", w: 4.0, d: 1.17, h: 2.54, row: 1, build: consoleB(4.0, 1.17, 2.54) },
+      { id: "china-cabinet", name: "Glass Display", w: 5.25, d: 1.48, h: 7.21, row: 2, build: chinaB(5.25, 1.48, 7.21) },
+      { id: "office-shelf", name: "Office Shelf", w: 5.58, d: 1.08, h: 7.21, row: 2, build: officeShelfB(5.58, 1.08, 7.21) },
+      { id: "old-tv-center", name: "Old TV Center", w: 5.25, d: 2.0, h: 4.58, row: 2, build: oldTvCenterB(5.25, 2.0, 4.58) },
+      { id: "tv-stand-1", name: "TV Console", w: 5.0, d: 1.5, h: 2.96, row: 2, build: tvStandB(5.0, 1.5, 2.96) },
+      { id: "bookshelf", name: "Bookshelf", w: 2.83, d: 0.92, h: 6.23, row: 2, build: bookshelfB(2.83, 0.92, 6.23, 4) },
+      { id: "hall-tree", name: "Coat Hall Tree", w: 3.08, d: 1.42, h: 6.88, row: 2, build: hallTreeB(3.08, 1.42, 6.88) },
+      { id: "king-dresser", name: "King Dresser + Mirror", w: 5.5, d: 1.75, h: 5.96, row: 3, build: dresserMirrorB(5.5, 1.75, 2.6, 5.96) },
+      { id: "king-tall-chest", name: "King Tall Chest", w: 3.33, d: 1.57, h: 5.04, row: 3, build: tallChestB(3.33, 1.57, 5.04, 4) },
+      { id: "queen-dresser", name: "Queen Dresser + Mirror", w: 5.67, d: 1.83, h: 6.5, row: 3, build: dresserMirrorB(5.67, 1.83, 2.7, 6.5) },
+      { id: "queen-chest-1", name: "Queen Tall Chest", w: 3.98, d: 1.75, h: 4.71, row: 3, build: tallChestB(3.98, 1.75, 4.71, 4) },
+      { id: "queen-nightstand", name: "Queen Nightstand", w: 2.78, d: 1.67, h: 2.63, row: 3, build: chestB(2.78, 1.67, 2.63, 3) },
+      { id: "king-nightstand", name: "King Nightstand", w: 2.5, d: 1.67, h: 2.63, row: 3, build: kingNightstandB(2.5, 1.67, 2.63) },
+      { id: "clock-buffet", name: "Clock Buffet", w: 5.17, d: 1.6, h: 3.46, row: 3, build: buffetB(5.17, 1.6, 3.46) },
+      // Round 2 (dims from the annotated photos: 68x44x29, 22.5x24x41, 37.25x18x32.5 in)
+      { id: "dining-table", name: "Dining Table", w: 5.67, d: 3.67, h: 2.42, row: 0, tablePassThrough: true, build: diningTableB(5.67, 3.67, 2.42) },
+      { id: "dining-chair", name: "Dining Chair", w: 1.88, d: 2.0, h: 3.42, row: 0, build: diningChairB(1.88, 2.0, 3.42) },
+      { id: "liquor-cabinet", name: "Liquor Cabinet", w: 3.1, d: 1.5, h: 2.71, row: 0, build: liquorCabinetB(3.1, 1.5, 2.71) },
+      // Round 3 (desk dimensions from the annotated photo: 72x36x30.5 in)
+      { id: "office-desk", name: "Office Desk", w: 6.0, d: 3.0, h: 2.54, row: 1, tablePassThrough: true, build: officeDeskB(6.0, 3.0, 2.54) },
+      { id: "black-office-chair", name: "Black Office Chair", w: 2.15, d: 2.1, h: 3.6, row: 1, build: officeChairB(2.15, 2.1, 3.6) },
+      // Round 4 (office couch dimensions from the annotated photo: 72.75x33.375x29.5 in)
+      { id: "office-couch", name: "Office Couch", w: 6.06, d: 2.78, h: 2.46, row: 2, build: officeCouchB(6.06, 2.78, 2.46) },
+      // Movable kitchen seating converted from the three fixed island stools.
+      { id: "counter-stool", name: "Counter Stool", w: 0.84, d: 0.84, h: 2.2, row: 0, build: counterStoolB(0.84, 0.84, 2.2) },
+      // Decorative helpers, duplicable like everything else
+      { id: "plant-1", name: "Tall Plant", w: 1.6, d: 1.6, h: 6.2, row: 0, build: plantB(1.6, 1.6, 6.2) },
+      { id: "plant-2", name: "Tall Plant 2", w: 1.5, d: 1.5, h: 5.4, row: 0, build: plantB(1.5, 1.5, 5.4) }
+    ];
+
+    const instancesByCatalog = new Map(); // catalog id -> [group, ...] (first is the original)
+    const stagingSlots = new Map();       // catalog id -> { x, z }
+    let draggingPiece = null;
+    let dragStartLayout = null;
+    let dragStartedInStaging = false;
+    let selectedPiece = null;
+    let copiedPiece = null;
+    let pasteTarget = null;
+    let newlyAddedInventoryIds = [];
+    const RECENT_INVENTORY_IDS = ["office-couch", "counter-stool", "king-nightstand", "king-tall-chest", "queen-mattress-box"];
+    const undoStack = [];
+    const MAX_UNDO_STATES = 60;
+
+    function cloneLayoutData(data) {
+      return JSON.parse(JSON.stringify(data));
+    }
+
+    function sameLayoutData(a, b) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    function updateUndoButton() {
+      const button = document.querySelector("#undo-furniture");
+      if (button) button.disabled = undoStack.length === 0;
+    }
+
+    function rememberUndoState(layoutData) {
+      const snapshot = cloneLayoutData(layoutData);
+      const last = undoStack[undoStack.length - 1];
+      if (last && sameLayoutData(last, snapshot)) return;
+      undoStack.push(snapshot);
+      while (undoStack.length > MAX_UNDO_STATES) undoStack.shift();
+      updateUndoButton();
+    }
+
+    function undoFurnitureChange() {
+      const previous = undoStack.pop();
+      if (!previous) return;
+      applyLayoutData(previous);
+      saveFurnitureLayout();
+      updateUndoButton();
+    }
+
+    function defaultLayoutData() {
+      return { v: 2, pieces: {} };
+    }
+
+    const LAYOUT_ID_ALIASES = [
+      { from: "king-media-chest", to: "king-tall-chest" },
+      { from: "queen-chest-2", to: "queen-chest-1" }
+    ];
+
+    function migrateLayoutAliases(data) {
+      if (!data || !data.pieces) return data;
+      LAYOUT_ID_ALIASES.forEach(({ from, to }) => {
+        const source = data.pieces[from];
+        const target = data.pieces[to];
+        if (!Array.isArray(source) || source.length === 0) return;
+        if (Array.isArray(target) && target.length > 0) return;
+        data.pieces[to] = source;
+      });
+      return data;
+    }
+
+    function normalizeLayoutData(raw) {
+      if (!raw || typeof raw !== "object") return defaultLayoutData();
+      if (raw.v === 2 && raw.pieces && typeof raw.pieces === "object") return migrateLayoutAliases(raw);
+      // v1 format: { id: {x,z,ry} }
+      const pieces = {};
+      Object.keys(raw).forEach((id) => {
+        const s = raw[id];
+        if (s && typeof s.x === "number") pieces[id] = [{ x: s.x, z: s.z, ry: s.ry || 0 }];
+      });
+      return migrateLayoutAliases({ v: 2, pieces });
+    }
+
+    function loadAutosave() {
+      try {
+        return normalizeLayoutData(JSON.parse(localStorage.getItem(FURN_STORE_KEY)));
+      } catch (err) {
+        return defaultLayoutData();
+      }
+    }
+
+    function currentLayoutData() {
+      const pieces = {};
+      FURNITURE_CATALOG.forEach((item) => {
+        const arr = instancesByCatalog.get(item.id) || [];
+        pieces[item.id] = arr.map((g) => ({
+          x: Number(g.position.x.toFixed(3)),
+          z: Number(g.position.z.toFixed(3)),
+          ry: Number(g.rotation.y.toFixed(4)),
+          k: g.userData.locked ? 1 : 0
+        }));
+      });
+      return { v: 2, pieces };
+    }
+
+    function saveFurnitureLayout() {
+      localStorage.setItem(FURN_STORE_KEY, JSON.stringify(currentLayoutData()));
+    }
+
+    function createPieceInstance(item, index) {
+      const group = new THREE.Group();
+      group.name = item.name;
+      item.build(group);
+
+      const label = makeTextSprite(item.name, 0x3c4a48);
+      label.position.set(0, item.h + 0.8, 0);
+      label.scale.set(label.userData.w * 0.5, label.userData.h * 0.5, 1);
+      label.renderOrder = 25;
+      group.add(label);
+
+      const ox = item.w / 2 + 0.22;
+      const oz = item.d / 2 + 0.22;
+      const outline = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-ox, 0, -oz),
+          new THREE.Vector3(ox, 0, -oz),
+          new THREE.Vector3(ox, 0, oz),
+          new THREE.Vector3(-ox, 0, oz)
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x176a68, depthTest: false })
+      );
+      outline.position.y = 0.05;
+      outline.visible = false;
+      outline.renderOrder = 32;
+      group.add(outline);
+
+      const slot = stagingSlots.get(item.id);
+      group.position.set(slot.x + Math.min(index, 4) * 0.5, 0, slot.z + Math.min(index, 4) * 0.5);
+      group.userData.piece = {
+        id: item.id,
+        name: item.name,
+        homeX: slot.x,
+        homeZ: slot.z,
+        w: item.w,
+        d: item.d,
+        h: item.h,
+        tablePassThrough: !!item.tablePassThrough
+      };
+      group.userData.locked = false;
+      group.userData.outline = outline;
+      model.add(group);
+      instancesByCatalog.get(item.id).push(group);
+      furniturePieces.push(group);
+      return group;
+    }
+
+    function removePieceInstance(group) {
+      const arr = instancesByCatalog.get(group.userData.piece.id);
+      const i = arr.indexOf(group);
+      if (i <= 0) return false; // originals are never removed
+      arr.splice(i, 1);
+      const j = furniturePieces.indexOf(group);
+      if (j >= 0) furniturePieces.splice(j, 1);
+      if (selectedPiece === group) selectPiece(null);
+      model.remove(group);
+      group.traverse((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+      });
+      return true;
+    }
+
+    function applyLayoutData(raw) {
+      const data = normalizeLayoutData(raw);
+      FURNITURE_CATALOG.forEach((item) => {
+        const want = data.pieces[item.id] && data.pieces[item.id].length ? data.pieces[item.id] : [null];
+        const arr = instancesByCatalog.get(item.id);
+        while (arr.length < want.length) createPieceInstance(item, arr.length);
+        while (arr.length > want.length) removePieceInstance(arr[arr.length - 1]);
+        want.forEach((s, i) => {
+          const g = arr[i];
+          if (s && typeof s.x === "number") {
+            g.position.set(s.x, 0, s.z);
+            g.rotation.y = s.ry || 0;
+            g.userData.locked = !!s.k;
+          } else {
+            g.position.set(g.userData.piece.homeX, 0, g.userData.piece.homeZ);
+            g.rotation.y = 0;
+            g.userData.locked = false;
+          }
+        });
+      });
+    }
+
+    function catalogIdsMissingFromLayout(raw) {
+      const data = normalizeLayoutData(raw);
+      return FURNITURE_CATALOG
+        .filter((item) => !Array.isArray(data.pieces[item.id]) || data.pieces[item.id].length === 0)
+        .map((item) => item.id);
+    }
+
+    function addInventoryIdsToStaging(ids, { remember = true, focus = true } = {}) {
+      const uniqueIds = [...new Set(ids)].filter(Boolean);
+      if (!uniqueIds.length) return [];
+      const before = currentLayoutData();
+      const placed = [];
+
+      uniqueIds.forEach((id) => {
+        const item = FURNITURE_CATALOG.find((c) => c.id === id);
+        if (!item) return;
+        const arr = instancesByCatalog.get(id) || [];
+        let piece = arr.find((g) => isInFurnitureStaging(g));
+        if (!piece && arr.length) {
+          // If every copy is already inside the house, add a fresh staging copy
+          // instead of moving the user's arranged furniture.
+          piece = createPieceInstance(item, arr.length);
+        }
+        if (!piece) piece = createPieceInstance(item, 0);
+        piece.position.set(piece.userData.piece.homeX, 0, piece.userData.piece.homeZ);
+        piece.rotation.y = 0;
+        piece.userData.locked = false;
+        placed.push(piece);
+      });
+
+      if (!sameLayoutData(before, currentLayoutData())) {
+        if (remember) rememberUndoState(before);
+        saveFurnitureLayout();
+      }
+      if (focus && placed.length) {
+        selectPiece(placed[placed.length - 1]);
+        setCameraView("top");
+      }
+      return placed;
+    }
+
+    function addNewInventoryToStaging() {
+      const ids = [
+        ...newlyAddedInventoryIds,
+        ...catalogIdsMissingFromLayout(loadAutosave()),
+        ...RECENT_INVENTORY_IDS
+      ];
+      const placed = addInventoryIdsToStaging(ids);
+      const button = document.querySelector("#add-new-inventory");
+      if (button) {
+        const old = button.textContent;
+        button.textContent = placed.length ? "New inventory added" : "Inventory already added";
+        setTimeout(() => { button.textContent = old; }, 1600);
+      }
+    }
+
+    function resetFurnitureLayout() {
+      const before = currentLayoutData();
+      applyLayoutData(null);
+      if (!sameLayoutData(before, currentLayoutData())) rememberUndoState(before);
+      saveFurnitureLayout();
+    }
+
+    // Named layouts ("DC V1", "Bea V1", ...) and shareable links.
+    const LAYOUTS_KEY = "burnside-furniture-layouts-v1";
+
+    function loadNamedLayouts() {
+      try {
+        return JSON.parse(localStorage.getItem(LAYOUTS_KEY)) || {};
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function saveNamedLayouts(map) {
+      localStorage.setItem(LAYOUTS_KEY, JSON.stringify(map));
+    }
+
+    function layoutToHash() {
+      const json = JSON.stringify(currentLayoutData());
+      const b64 = btoa(unescape(encodeURIComponent(json)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      return "#L=" + b64;
+    }
+
+    function layoutFromLocationHash() {
+      const m = location.hash.match(/L=([A-Za-z0-9_-]+)/);
+      if (!m) return null;
+      try {
+        const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+        return JSON.parse(decodeURIComponent(escape(atob(b64))));
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function buildFurniture() {
+      const rowZ = [-9.2, -14.8, -19.8, -24.9];
+      const cursors = [-13, -13, -13, -13];
+      FURNITURE_CATALOG.forEach((item) => {
+        instancesByCatalog.set(item.id, []);
+        stagingSlots.set(item.id, { x: cursors[item.row] + item.w / 2, z: rowZ[item.row] });
+        cursors[item.row] += item.w + 2.0;
+      });
+      const fromLink = layoutFromLocationHash();
+      const initialLayout = fromLink || loadAutosave();
+      newlyAddedInventoryIds = catalogIdsMissingFromLayout(initialLayout);
+      applyLayoutData(initialLayout);
+      if (newlyAddedInventoryIds.length) addInventoryIdsToStaging(newlyAddedInventoryIds, { remember: false, focus: false });
+      if (fromLink || newlyAddedInventoryIds.length) saveFurnitureLayout();
+
+      const stagingWash = new THREE.Mesh(
+        new THREE.PlaneGeometry(50, 23),
+        new THREE.MeshBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.045, depthWrite: false })
+      );
+      stagingWash.rotation.x = -Math.PI / 2;
+      stagingWash.position.set(10, -0.1, -16.2);
+      stagingWash.name = "furniture staging wash";
+      model.add(stagingWash);
+      addLabel("Furniture Staging", 10.5, 0.25, -5.9, 0x5f6b69, 1.15);
+    }
+
+    function buildReferencePlane() {
+      const material = new THREE.MeshBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.08, side: THREE.DoubleSide });
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(61, 27), material);
+      plane.rotation.x = -Math.PI / 2;
+      plane.position.set(14.7, -0.115, 11.9);
+      plane.name = "overall footprint wash";
+      model.add(plane);
+    }
+
+    function buildScene() {
+      buildReferencePlane();
+      buildOpenArea();
+      buildHallAndPantryBlock();
+      buildBathCore();
+      buildGarage();
+      buildBedroom();
+      buildOffice();
+      buildFurniture();
+      addOrientationLabels();
+
+      const hem = new THREE.HemisphereLight(0xfffbf0, 0x7d817d, 1.45);
+      scene.add(hem);
+
+      const sun = new THREE.DirectionalLight(0xffffff, 1.45);
+      sun.position.set(18, 42, 32);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.left = -20;
+      sun.shadow.camera.right = 70;
+      sun.shadow.camera.top = 55;
+      sun.shadow.camera.bottom = -45;
+      sun.shadow.camera.near = 3;
+      sun.shadow.camera.far = 90;
+      scene.add(sun);
+    }
+
+    buildScene();
+
+    // ---------- Furniture drag & drop ----------
+    const raycaster = new THREE.Raycaster();
+    const pointerNdc = new THREE.Vector2();
+    const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const dragPoint = new THREE.Vector3();
+    const dragOffset = new THREE.Vector3();
+    const pasteMarker = new THREE.Mesh(
+      new THREE.RingGeometry(0.24, 0.34, 32),
+      new THREE.MeshBasicMaterial({ color: palette.teal, transparent: true, opacity: 0.9, depthTest: false, side: THREE.DoubleSide })
+    );
+    pasteMarker.rotation.x = -Math.PI / 2;
+    pasteMarker.position.y = 0.08;
+    pasteMarker.renderOrder = 40;
+    pasteMarker.visible = false;
+    pasteMarker.name = "paste target";
+    model.add(pasteMarker);
+
+    function setPointerFromEvent(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    function groundPointAtPointer() {
+      raycaster.setFromCamera(pointerNdc, camera);
+      if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return null;
+      const local = model.worldToLocal(dragPoint.clone());
+      return {
+        x: Math.round(local.x / SNAP) * SNAP,
+        z: Math.round(local.z / SNAP) * SNAP
+      };
+    }
+
+    function setPasteTarget(point) {
+      pasteTarget = point ? { x: point.x, z: point.z } : null;
+      pasteMarker.visible = !!(pasteTarget && copiedPiece);
+      if (pasteTarget) pasteMarker.position.set(pasteTarget.x, 0.08, pasteTarget.z);
+    }
+
+    function pieceAtPointer() {
+      raycaster.setFromCamera(pointerNdc, camera);
+      const hits = raycaster.intersectObjects(furniturePieces, true);
+      for (const hit of hits) {
+        let obj = hit.object;
+        while (obj) {
+          if (obj.userData && obj.userData.piece) return obj;
+          obj = obj.parent;
+        }
+      }
+      return null;
+    }
+
+    function refreshOutlineColor(piece) {
+      piece.userData.outline.material.color.setHex(piece.userData.locked ? 0xad5b2b : 0x176a68);
+    }
+
+    function selectPiece(piece) {
+      if (selectedPiece && selectedPiece.userData.outline) selectedPiece.userData.outline.visible = false;
+      selectedPiece = piece;
+      if (selectedPiece) {
+        refreshOutlineColor(selectedPiece);
+        selectedPiece.userData.outline.visible = true;
+      }
+    }
+
+    // Wall planes furniture snaps back-to while dragging (dir = side the piece rests on).
+    const SNAP_WALLS = {
+      x: [
+        { x: 0, z1: 0, z2: 23.8, dir: 1 },
+        { x: 0, z1: P.garS, z2: 23.8, dir: -1 },
+        { x: P.garW, z1: P.garS, z2: 23.8, dir: 1 },
+        { x: P.livingE, z1: 0, z2: P.hallS, dir: -1 },
+        { x: P.kitchenE, z1: P.hallN, z2: 23.8, dir: -1 },
+        { x: P.blockE, z1: P.pantryS, z2: P.hallS, dir: 1 },
+        { x: P.closetDoorX, z1: 0, z2: P.pantryS, dir: 1 },
+        { x: P.officeW, z1: P.hallN, z2: 23.8, dir: 1 },
+        { x: P.offClosetW, z1: P.hallS, z2: P.hallN, dir: -1 },
+        { x: P.eastE, z1: 0, z2: P.hallS, dir: -1 },
+        { x: P.eastE, z1: P.hallN, z2: 23.8, dir: -1 }
+      ],
+      z: [
+        { z: 0, x1: 0, x2: P.livingE, dir: 1 },
+        { z: 0, x1: P.closetDoorX, x2: P.eastE, dir: 1 },
+        { z: 23.8, x1: 0, x2: P.kitchenE, dir: -1 },
+        { z: 23.8, x1: P.officeW, x2: P.eastE, dir: -1 },
+        { z: 23.8, x1: P.garW, x2: 0, dir: -1 },
+        { z: P.garS, x1: P.garW, x2: 0, dir: 1 },
+        { z: P.hallS, x1: P.blockE, x2: P.eastE, dir: -1 },
+        { z: P.hallS, x1: P.livingE, x2: P.offClosetW, dir: 1 },
+        { z: P.hallN, x1: P.officeW, x2: P.offClosetW, dir: 1 },
+        { z: P.offClosetZ, x1: P.offClosetW, x2: P.eastE, dir: 1 },
+        { z: P.pantryS, x1: P.closetDoorX, x2: P.blockE, dir: -1 }
+      ]
+    };
+
+    function applyWallSnap(g) {
+      const info = g.userData.piece;
+      const c = Math.abs(Math.cos(g.rotation.y));
+      const s = Math.abs(Math.sin(g.rotation.y));
+      const halfX = (info.w / 2) * c + (info.d / 2) * s;
+      const halfZ = (info.w / 2) * s + (info.d / 2) * c;
+      const RANGE = 0.55;
+      for (const wall of SNAP_WALLS.x) {
+        if (g.position.z < wall.z1 - 0.5 || g.position.z > wall.z2 + 0.5) continue;
+        const target = wall.x + wall.dir * (wallT / 2 + halfX);
+        if (Math.abs(g.position.x - target) < RANGE) g.position.x = Number(target.toFixed(3));
+      }
+      for (const wall of SNAP_WALLS.z) {
+        if (g.position.x < wall.x1 - 0.5 || g.position.x > wall.x2 + 0.5) continue;
+        const target = wall.z + wall.dir * (wallT / 2 + halfZ);
+        if (Math.abs(g.position.z - target) < RANGE) g.position.z = Number(target.toFixed(3));
+      }
+    }
+
+    function furnitureHalfExtents(g) {
+      const info = g.userData.piece;
+      const c = Math.abs(Math.cos(g.rotation.y));
+      const s = Math.abs(Math.sin(g.rotation.y));
+      return {
+        x: (info.w / 2) * c + (info.d / 2) * s,
+        z: (info.w / 2) * s + (info.d / 2) * c
+      };
+    }
+
+    function furnitureBounds(g) {
+      const half = furnitureHalfExtents(g);
+      const h = Math.max(g.userData.piece.h || 1, 0.25);
+      return {
+        x1: g.position.x - half.x,
+        x2: g.position.x + half.x,
+        y1: 0,
+        y2: h,
+        z1: g.position.z - half.z,
+        z2: g.position.z + half.z
+      };
+    }
+
+    function boxesOverlap(a, b) {
+      const EPS = 0.015;
+      return (
+        a.x1 < b.x2 - EPS && a.x2 > b.x1 + EPS &&
+        a.y1 < b.y2 - EPS && a.y2 > b.y1 + EPS &&
+        a.z1 < b.z2 - EPS && a.z2 > b.z1 + EPS
+      );
+    }
+
+    function overlapVolume(a, b) {
+      const x = Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1));
+      const y = Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+      const z = Math.max(0, Math.min(a.z2, b.z2) - Math.max(a.z1, b.z1));
+      return x * y * z;
+    }
+
+    function allowsTableUnderlap(a, b) {
+      const aTable = !!a.userData.piece.tablePassThrough;
+      const bTable = !!b.userData.piece.tablePassThrough;
+      return aTable !== bTable;
+    }
+
+    function furnitureCollisionScore(g) {
+      const bounds = furnitureBounds(g);
+      let score = 0;
+      for (const collider of houseColliders) {
+        if (boxesOverlap(bounds, collider)) score += overlapVolume(bounds, collider);
+      }
+      for (const other of furniturePieces) {
+        if (other === g) continue;
+        if (!other.parent) continue;
+        if (allowsTableUnderlap(g, other)) continue;
+        const otherBounds = furnitureBounds(other);
+        if (boxesOverlap(bounds, otherBounds)) score += overlapVolume(bounds, otherBounds);
+      }
+      return score;
+    }
+
+    function furnitureIntersectsObstacle(g) {
+      return furnitureCollisionScore(g) > 0.0001;
+    }
+
+    function isInFurnitureStaging(g) {
+      return g.position.z < -4.0;
+    }
+
+    function placePieceAtClearFinal(g, x, z, snap = true) {
+      const oldX = g.position.x;
+      const oldZ = g.position.z;
+      g.position.x = x;
+      g.position.z = z;
+      if (snap) applyWallSnap(g);
+      if (furnitureCollisionScore(g) > 0.0001) {
+        g.position.x = oldX;
+        g.position.z = oldZ;
+        return false;
+      }
+      return true;
+    }
+
+    function placePieceNearClear(g, x, z, snap = true) {
+      const baseX = Math.round(x / SNAP) * SNAP;
+      const baseZ = Math.round(z / SNAP) * SNAP;
+      const maxSteps = Math.round(6 / SNAP);
+      for (let radius = 0; radius <= maxSteps; radius += 1) {
+        for (let dx = -radius; dx <= radius; dx += 1) {
+          for (let dz = -radius; dz <= radius; dz += 1) {
+            if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+            if (placePieceAtClearFinal(g, baseX + dx * SNAP, baseZ + dz * SNAP, snap)) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function placePieceIfClear(g, x, z, snap = true, options = {}) {
+      if (options.importFromStaging && isInFurnitureStaging(g)) {
+        return placePieceAtClearFinal(g, x, z, snap);
+      }
+
+      const oldX = g.position.x;
+      const oldZ = g.position.z;
+      g.position.x = x;
+      g.position.z = z;
+      if (snap) applyWallSnap(g);
+      const finalX = g.position.x;
+      const finalZ = g.position.z;
+      g.position.x = oldX;
+      g.position.z = oldZ;
+
+      const dx = finalX - oldX;
+      const dz = finalZ - oldZ;
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / (SNAP / 2)));
+      let lastX = oldX;
+      let lastZ = oldZ;
+      let lastScore = furnitureCollisionScore(g);
+
+      for (let i = 1; i <= steps; i += 1) {
+        g.position.x = oldX + (dx * i) / steps;
+        g.position.z = oldZ + (dz * i) / steps;
+        const newScore = furnitureCollisionScore(g);
+        if (newScore > 0.0001 && newScore >= lastScore - 0.0001) {
+          g.position.x = lastX;
+          g.position.z = lastZ;
+          return lastX !== oldX || lastZ !== oldZ;
+        }
+        lastX = g.position.x;
+        lastZ = g.position.z;
+        lastScore = newScore;
+      }
+
+      if (furnitureCollisionScore(g) > 0.0001) {
+        g.position.x = oldX;
+        g.position.z = oldZ;
+        return false;
+      }
+      return true;
+    }
+
+    renderer.domElement.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      setPointerFromEvent(event);
+      const piece = pieceAtPointer();
+      if (!piece) {
+        setPasteTarget(groundPointAtPointer());
+        selectPiece(null);
+        return;
+      }
+      selectPiece(piece);
+      if (piece.userData.locked) return; // locked pieces stay put; the camera keeps working
+      controls.enabled = false;
+      draggingPiece = piece;
+      dragStartedInStaging = isInFurnitureStaging(piece);
+      dragStartLayout = cloneLayoutData(currentLayoutData());
+      raycaster.setFromCamera(pointerNdc, camera);
+      if (raycaster.ray.intersectPlane(dragPlane, dragPoint)) {
+        const local = model.worldToLocal(dragPoint.clone());
+        dragOffset.set(piece.position.x - local.x, 0, piece.position.z - local.z);
+      } else {
+        dragOffset.set(0, 0, 0);
+      }
+    });
+
+    window.addEventListener("pointermove", (event) => {
+      setPointerFromEvent(event);
+      if (draggingPiece) {
+        raycaster.setFromCamera(pointerNdc, camera);
+        if (raycaster.ray.intersectPlane(dragPlane, dragPoint)) {
+          const local = model.worldToLocal(dragPoint.clone());
+          const nextX = Math.round((local.x + dragOffset.x) / SNAP) * SNAP;
+          const nextZ = Math.round((local.z + dragOffset.z) / SNAP) * SNAP;
+          placePieceIfClear(draggingPiece, nextX, nextZ, true, { importFromStaging: dragStartedInStaging });
+        }
+      } else {
+        renderer.domElement.style.cursor = pieceAtPointer() ? "grab" : "";
+      }
+    });
+
+    window.addEventListener("pointerup", () => {
+      if (draggingPiece) {
+        if (dragStartLayout && !sameLayoutData(dragStartLayout, currentLayoutData())) {
+          rememberUndoState(dragStartLayout);
+        }
+        saveFurnitureLayout();
+        draggingPiece = null;
+        dragStartedInStaging = false;
+        dragStartLayout = null;
+      }
+      controls.enabled = true;
+    });
+
+    function removeOrSendHome(piece) {
+      const before = currentLayoutData();
+      if (!removePieceInstance(piece)) {
+        piece.position.set(piece.userData.piece.homeX, 0, piece.userData.piece.homeZ);
+        piece.rotation.y = 0;
+      }
+      if (!sameLayoutData(before, currentLayoutData())) rememberUndoState(before);
+      saveFurnitureLayout();
+    }
+
+    function duplicateSelected() {
+      if (!selectedPiece) return null;
+      const before = currentLayoutData();
+      const id = selectedPiece.userData.piece.id;
+      const item = FURNITURE_CATALOG.find((c) => c.id === id);
+      const arr = instancesByCatalog.get(id);
+      const source = selectedPiece;
+      const clone = createPieceInstance(item, arr.length - 1);
+      clone.rotation.y = source.rotation.y;
+      const offsets = [[1, 1], [-1, 1], [1, -1], [-1, -1], [2, 0], [-2, 0], [0, 2], [0, -2]];
+      let placed = false;
+      for (const [dx, dz] of offsets) {
+        const x = Math.round((source.position.x + dx) / SNAP) * SNAP;
+        const z = Math.round((source.position.z + dz) / SNAP) * SNAP;
+        if (placePieceIfClear(clone, x, z)) {
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        removePieceInstance(clone);
+        selectPiece(source);
+        return null;
+      }
+      selectPiece(clone);
+      rememberUndoState(before);
+      saveFurnitureLayout();
+      return clone;
+    }
+
+    function copySelectedPiece() {
+      if (!selectedPiece) return false;
+      copiedPiece = {
+        id: selectedPiece.userData.piece.id,
+        ry: selectedPiece.rotation.y
+      };
+      pasteMarker.visible = !!pasteTarget;
+      return true;
+    }
+
+    function pasteCopiedPiece() {
+      if (!copiedPiece || !pasteTarget) return null;
+      const item = FURNITURE_CATALOG.find((c) => c.id === copiedPiece.id);
+      if (!item) return null;
+      const before = currentLayoutData();
+      const arr = instancesByCatalog.get(item.id);
+      const clone = createPieceInstance(item, arr.length);
+      clone.rotation.y = copiedPiece.ry || 0;
+      if (!placePieceNearClear(clone, pasteTarget.x, pasteTarget.z, true)) {
+        removePieceInstance(clone);
+        return null;
+      }
+      clone.userData.locked = false;
+      selectPiece(clone);
+      rememberUndoState(before);
+      saveFurnitureLayout();
+      return clone;
+    }
+
+    renderer.domElement.addEventListener("dblclick", (event) => {
+      setPointerFromEvent(event);
+      const piece = pieceAtPointer();
+      if (!piece || piece.userData.locked) return;
+      removeOrSendHome(piece);
+    });
+
+    const PAN_KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+
+    window.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      const key = event.key.toLowerCase();
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && key === "z") {
+        event.preventDefault();
+        undoFurnitureChange();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && key === "c") {
+        if (copySelectedPiece()) event.preventDefault();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && key === "v") {
+        event.preventDefault();
+        pasteCopiedPiece();
+        return;
+      }
+      if (PAN_KEYS[event.key]) {
+        // Pan the camera along the ground relative to the current view direction.
+        event.preventDefault();
+        const [dx, dz] = PAN_KEYS[event.key];
+        const step = event.shiftKey ? 4.5 : 1.5;
+        const fwd = new THREE.Vector3().subVectors(controls.target, camera.position);
+        fwd.y = 0;
+        if (fwd.lengthSq() < 0.01) {
+          fwd.copy(camera.up);
+          fwd.y = 0;
+        }
+        fwd.normalize();
+        const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+        const move = new THREE.Vector3()
+          .addScaledVector(right, dx * step)
+          .addScaledVector(fwd, -dz * step);
+        camera.position.add(move);
+        controls.target.add(move);
+        return;
+      }
+      if (!selectedPiece) return;
+      if (key === "l") {
+        const before = currentLayoutData();
+        selectedPiece.userData.locked = !selectedPiece.userData.locked;
+        refreshOutlineColor(selectedPiece);
+        rememberUndoState(before);
+        saveFurnitureLayout();
+        return;
+      }
+      if (event.key === "Escape") {
+        selectPiece(null);
+        return;
+      }
+      if (key === "d") {
+        duplicateSelected(); // copies of locked pieces come out unlocked
+        return;
+      }
+      if (selectedPiece.userData.locked) return; // locked pieces ignore move/rotate/remove keys
+      if (key === "r") {
+        const before = currentLayoutData();
+        const oldRotation = selectedPiece.rotation.y;
+        const oldScore = furnitureCollisionScore(selectedPiece);
+        selectedPiece.rotation.y += (event.shiftKey ? -1 : 1) * Math.PI / 2;
+        const newScore = furnitureCollisionScore(selectedPiece);
+        if (newScore > 0.0001 && newScore >= oldScore - 0.0001) {
+          selectedPiece.rotation.y = oldRotation;
+        } else {
+          rememberUndoState(before);
+          saveFurnitureLayout();
+        }
+      } else if (key === "e") {
+        const before = currentLayoutData();
+        const oldRotation = selectedPiece.rotation.y;
+        const oldScore = furnitureCollisionScore(selectedPiece);
+        selectedPiece.rotation.y += (event.shiftKey ? -1 : 1) * Math.PI / 12;
+        const newScore = furnitureCollisionScore(selectedPiece);
+        if (newScore > 0.0001 && newScore >= oldScore - 0.0001) {
+          selectedPiece.rotation.y = oldRotation;
+        } else {
+          rememberUndoState(before);
+          saveFurnitureLayout();
+        }
+      } else if (event.key === "Delete" || event.key === "Backspace") {
+        removeOrSendHome(selectedPiece);
+      }
+    });
+
+    document.querySelector("#undo-furniture").addEventListener("click", undoFurnitureChange);
+    document.querySelector("#reset-furniture").addEventListener("click", resetFurnitureLayout);
+    document.querySelector("#duplicate-piece").addEventListener("click", duplicateSelected);
+    document.querySelector("#add-new-inventory").addEventListener("click", addNewInventoryToStaging);
+    updateUndoButton();
+
+    function updateMeasurementToggle() {
+      const button = document.querySelector("#toggle-measurements");
+      if (!button) return;
+      button.setAttribute("aria-pressed", measurementsGroup.visible ? "true" : "false");
+      button.textContent = measurementsGroup.visible ? "Hide distance markers" : "Show distance markers";
+    }
+
+    document.querySelector("#toggle-measurements").addEventListener("click", () => {
+      measurementsGroup.visible = !measurementsGroup.visible;
+      updateMeasurementToggle();
+    });
+    updateMeasurementToggle();
+
+    function renderLayoutList() {
+      const listEl = document.querySelector("#layout-list");
+      const layouts = loadNamedLayouts();
+      const names = Object.keys(layouts).sort();
+      listEl.innerHTML = "";
+      if (!names.length) {
+        listEl.innerHTML = '<p class="assumptions" style="margin:0">No saved layouts yet. Arrange furniture, name it, hit Save.</p>';
+        return;
+      }
+      names.forEach((name) => {
+        const row = document.createElement("div");
+        row.className = "layout-row";
+        const loadBtn = document.createElement("button");
+        loadBtn.type = "button";
+        loadBtn.className = "load";
+        loadBtn.textContent = name;
+        loadBtn.title = "Load this layout";
+        loadBtn.addEventListener("click", () => {
+          const current = loadNamedLayouts()[name];
+          if (!current) return;
+          const before = currentLayoutData();
+          const missing = catalogIdsMissingFromLayout(current);
+          applyLayoutData(current);
+          if (missing.length) addInventoryIdsToStaging(missing, { remember: false, focus: false });
+          if (!sameLayoutData(before, currentLayoutData())) rememberUndoState(before);
+          saveFurnitureLayout();
+        });
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "del";
+        delBtn.textContent = "✕";
+        delBtn.title = "Delete this saved layout";
+        delBtn.addEventListener("click", () => {
+          const map = loadNamedLayouts();
+          delete map[name];
+          saveNamedLayouts(map);
+          renderLayoutList();
+        });
+        row.appendChild(loadBtn);
+        row.appendChild(delBtn);
+        listEl.appendChild(row);
+      });
+    }
+
+    document.querySelector("#save-layout").addEventListener("click", () => {
+      const input = document.querySelector("#layout-name");
+      const name = input.value.trim();
+      if (!name) {
+        input.focus();
+        return;
+      }
+      const map = loadNamedLayouts();
+      map[name] = currentLayoutData();
+      saveNamedLayouts(map);
+      input.value = "";
+      renderLayoutList();
+    });
+
+    document.querySelector("#layout-name").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") document.querySelector("#save-layout").click();
+    });
+
+    document.querySelector("#share-link").addEventListener("click", async () => {
+      const button = document.querySelector("#share-link");
+      const url = location.origin + location.pathname + layoutToHash();
+      try {
+        await navigator.clipboard.writeText(url);
+        const old = button.textContent;
+        button.textContent = "Link copied!";
+        setTimeout(() => { button.textContent = old; }, 1600);
+      } catch (err) {
+        window.prompt("Copy this link:", url);
+      }
+    });
+
+    renderLayoutList();
+
+    window.__burnside = {
+      model, camera, controls, furniturePieces, instancesByCatalog, houseColliders,
+      resetFurnitureLayout, duplicateSelected, undoFurnitureChange, addNewInventoryToStaging, applyLayoutData, currentLayoutData,
+      selectPiece, copySelectedPiece, pasteCopiedPiece, setPasteTarget, placePieceIfClear,
+      furnitureCollisionScore, furnitureIntersectsObstacle, setCameraView: (k) => setCameraView(k)
+    };
+
+    const cameraViews = {
+      overall: {
+        position: new THREE.Vector3(11.0, 45.0, -39.0),
+        target: new THREE.Vector3(27.5, 0.2, 6.0),
+        up: new THREE.Vector3(0, 1, 0)
+      },
+      top: {
+        position: new THREE.Vector3(29.0, 78, 2.5),
+        target: new THREE.Vector3(29.0, 0, 2.5),
+        up: new THREE.Vector3(0, 0, 1)
+      },
+      open: {
+        position: new THREE.Vector3(46.5, 13.5, -3.5),
+        target: new THREE.Vector3(31.5, 1.2, 15.0),
+        up: new THREE.Vector3(0, 1, 0)
+      },
+      entry: {
+        position: new THREE.Vector3(39.5, 13.0, 11.5),
+        target: new THREE.Vector3(26.8, 0.8, 1.2),
+        up: new THREE.Vector3(0, 1, 0)
+      },
+      bedroom: {
+        position: new THREE.Vector3(14.5, 22.5, -13.5),
+        target: new THREE.Vector3(10.5, 0.6, 5.2),
+        up: new THREE.Vector3(0, 1, 0)
+      },
+      office: {
+        position: new THREE.Vector3(3.3, 15.5, 33.5),
+        target: new THREE.Vector3(6.0, 1.3, 18.0),
+        up: new THREE.Vector3(0, 1, 0)
+      }
+    };
+
+    let activeView = null;
+    function setCameraView(key) {
+      const view = cameraViews[key];
+      if (!view) return;
+      activeView = {
+        startPosition: camera.position.clone(),
+        startTarget: controls.target.clone(),
+        startUp: camera.up.clone(),
+        endPosition: view.position.clone(),
+        endTarget: view.target.clone(),
+        endUp: (view.up || new THREE.Vector3(0, 1, 0)).clone(),
+        start: performance.now(),
+        duration: 860
+      };
+    }
+
+    document.querySelectorAll("[data-camera]").forEach((button) => {
+      button.addEventListener("click", () => setCameraView(button.dataset.camera));
+    });
+
+    function updateCameraAnimation() {
+      if (!activeView) return;
+      const t = Math.min(1, (performance.now() - activeView.start) / activeView.duration);
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      camera.position.lerpVectors(activeView.startPosition, activeView.endPosition, eased);
+      controls.target.lerpVectors(activeView.startTarget, activeView.endTarget, eased);
+      camera.up.lerpVectors(activeView.startUp, activeView.endUp, eased).normalize();
+      if (t >= 1) activeView = null;
+    }
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      renderer.setSize(Math.max(1, rect.width), Math.max(1, rect.height));
+      camera.aspect = Math.max(1, rect.width) / Math.max(1, rect.height);
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+    setCameraView("overall");
+
+    function animate() {
+      requestAnimationFrame(animate);
+      updateCameraAnimation();
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
